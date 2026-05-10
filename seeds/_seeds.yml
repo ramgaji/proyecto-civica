@@ -1,0 +1,113 @@
+# ============================================================================
+# _seeds.yml — Documentación y tests sobre los seeds
+# ============================================================================
+# Seeds del proyecto Fauna España. Son tablas de referencia pequeñas que
+# no vienen de ningún sistema origen — las mantenemos directamente como CSV.
+#
+# COMANDOS:
+#   dbt seed                              # Carga todos los seeds
+#   dbt seed --select provincia_ccaa      # Carga solo el indicado
+#   dbt seed --full-refresh               # Recrea las tablas desde cero
+# ============================================================================
+
+version: 2
+
+seeds:
+
+  # --------------------------------------------------------------------------
+  # provincia_ccaa — Mapeo de provincias a CCAA y código INE
+  # --------------------------------------------------------------------------
+  - name: provincia_ccaa
+    description: >
+      Tabla de referencia de provincias españolas y regiones de Francia,
+      Portugal y Marruecos que aparecen en los datos de avistamientos.
+      Usada para enriquecer localizacion y censo_poblacion con CCAA y país.
+    columns:
+      - name: id_provincia
+        description: PK numérica de la provincia.
+        data_tests:
+          - unique
+          - not_null
+      - name: nombre
+        description: Nombre de la provincia o región.
+        data_tests:
+          - not_null
+      - name: ccaa
+        description: Comunidad autónoma (null para regiones fuera de España).
+      - name: codigo_ine
+        description: Código INE de dos caracteres (null para regiones extranjeras).
+      - name: pais
+        description: País al que pertenece la provincia o región.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['Spain', 'France', 'Portugal', 'Morocco']
+
+  # --------------------------------------------------------------------------
+  # estado_conservacion — Códigos IUCN y LESRPE
+  # --------------------------------------------------------------------------
+  - name: estado_conservacion
+    description: >
+      Catálogo de estados de conservación según la IUCN (global) y el
+      catálogo español LESRPE. Una especie puede tener dos filas: una por
+      fuente IUCN y otra por LESRPE, permitiendo comparar ambos criterios.
+    columns:
+      - name: id_estado
+        description: PK del estado de conservación.
+        data_tests:
+          - unique
+          - not_null
+      - name: codigo
+        description: Código del estado (LC, NT, VU, EN, CR, EX, NE, EEI).
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['LC', 'NT', 'VU', 'EN', 'CR', 'EX', 'NE', 'EEI']
+      - name: nivel_riesgo
+        description: >
+          Nivel de riesgo numérico (0=sin datos, 1=menor riesgo, 5=crítico).
+          Útil para ordenar y filtrar en Gold sin joins adicionales.
+        data_tests:
+          - not_null
+      - name: fuente
+        description: Organismo que asigna el estado (IUCN o LESRPE).
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['IUCN', 'LESRPE']
+
+  # --------------------------------------------------------------------------
+  # tipo_amenaza — Catálogo de 6 tipos de amenaza fijos
+  # --------------------------------------------------------------------------
+  - name: tipo_amenaza
+    description: >
+      Catálogo cerrado de los 6 tipos de amenaza usados en el proyecto.
+      Cada especie puede tener entre 1 y 3 amenazas activas. La tabla
+      amenaza de Silver referencia este catálogo por nombre.
+    columns:
+      - name: id_tipo_amenaza
+        description: PK del tipo de amenaza.
+        data_tests:
+          - unique
+          - not_null
+      - name: nombre
+        description: Nombre corto del tipo de amenaza.
+        data_tests:
+          - unique
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - 'Pérdida de hábitat'
+                  - 'Caza/Furtivismo'
+                  - 'Atropellos'
+                  - 'Especies invasoras'
+                  - 'Pesticidas/Contaminación'
+                  - 'Cambio climático'
+      - name: descripcion
+        description: Descripción extendida del tipo de amenaza.
+        data_tests:
+          - not_null
