@@ -12,10 +12,7 @@
 # ============================================================================
 
 packages:
-  # --------------------------------------------------------------------------
-  # dbt_utils — El paquete imprescindible. Tests genéricos extra y macros
-  # muy útiles (date_spine, surrogate_key, group_by N, star, ...).
-  # https://hub.getdbt.com/dbt-labs/dbt_utils/latest/
-  # --------------------------------------------------------------------------
   - package: dbt-labs/dbt_utils
-    version: [">=1.3.3", "<2.0.0"]
+    version: [">=1.0.0", "<2.0.0"]
+  - package: dbt-labs/codegen
+    version: [">=0.12.0", "<1.0.0"]

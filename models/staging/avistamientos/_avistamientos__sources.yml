@@ -1,0 +1,170 @@
+version: 2
+
+sources:
+  - name: avistamientos
+    description: >
+      Datos en bruto de avistamientos ciudadanos (iNaturalist) y áreas
+      protegidas (Red Natura 2000). Cargados desde CSV a Snowflake Bronze.
+    schema: AVISTAMIENTOS
+    database: "{{ env_var('DBT_ENVIRONMENTS', 'FAIL') }}_BRONZE_DB"
+
+    tables:
+
+      - name: areas
+        description: >
+          Espacios naturales protegidos de España, Francia, Portugal y Marruecos.
+          Incluye Parques Nacionales, LICs y ZEPAs de la Red Natura 2000.
+          Granularidad: una fila por área protegida.
+        columns:
+          - name: id_area
+            description: PK del área protegida.
+            data_type: number
+            tests:
+              - unique
+              - not_null: 
+                  severity: warn #avisa pero no para pipeline
+          - name: nombre
+            description: Nombre del espacio protegido. Puede contener espacios extra.
+            data_type: varchar
+            tests:
+              - not_null
+          - name: tipo_area
+            description: Tipo de protección (Parque Nacional, ZEPA, LIC...). Mayúsculas inconsistentes.
+            data_type: varchar
+            tests:
+              - not_null
+          - name: es_lic
+            description: TRUE si es Lugar de Importancia Comunitaria (Red Natura 2000).
+            data_type: boolean
+            tests:
+              - not_null
+          - name: es_zepa
+            description: TRUE si es Zona de Especial Protección para las Aves.
+            data_type: boolean
+            tests:
+              - not_null
+          - name: es_parque_nacional
+            description: TRUE si tiene la figura de Parque Nacional.
+            data_type: boolean
+            tests:
+              - not_null
+          - name: pais
+            description: País donde se ubica el área.
+            data_type: varchar
+            tests:
+              - not_null
+          - name: provincia
+            description: Provincia o región del área protegida.
+            data_type: varchar
+          - name: ccaa
+            description: Comunidad autónoma. NULL para áreas de Francia, Portugal y Marruecos.
+            data_type: varchar
+          - name: lat_min
+            description: Latitud mínima del bounding box del área.
+            data_type: number
+            tests:
+              - not_null
+          - name: lat_max
+            description: Latitud máxima del bounding box del área.
+            data_type: number
+            tests:
+              - not_null
+          - name: lon_min
+            description: Longitud mínima del bounding box del área.
+            data_type: number
+            tests:
+              - not_null
+          - name: lon_max
+            description: Longitud máxima del bounding box del área.
+            data_type: number
+            tests:
+              - not_null
+          - name: superficie_ha
+            description: Superficie en hectáreas. Puede tener decimales por export Excel.
+            data_type: number
+          - name: anio_declaracion
+            description: Año de declaración del espacio protegido. 6.3% null.
+            data_type: number
+          - name: entidad_gestora
+            description: Entidad responsable. Contiene variantes (MITECO/Miteco/miteco).
+            data_type: varchar
+          - name: codigo_red_natura
+            description: Código oficial Red Natura 2000 (ESxxxxxxx). NULL fuera de España.
+            data_type: varchar
+
+      - name: observaciones
+        description: >
+          Avistamientos de fauna registrados por ciudadanos en iNaturalist.
+          Cubre Mammalia y Aves en España, Francia, Portugal y Marruecos
+          entre 2020 y 2024. Granularidad: una fila por avistamiento.
+        columns:
+          - name: id
+            description: ID único del avistamiento en iNaturalist (PK).
+            data_type: number
+            tests:
+              - unique
+              - not_null
+          - name: observed_on
+            description: >
+              Fecha del avistamiento. Contiene dos formatos mezclados
+              (YYYY-MM-DD y DD/MM/YYYY) — se normaliza en staging.
+            data_type: varchar
+            tests:
+              - not_null
+          - name: time_observed_at
+            description: Timestamp UTC del avistamiento.
+            data_type: varchar
+          - name: user_name
+            description: Nombre del observador. 21.7% null (anónimos) + algunos emails mezclados.
+            data_type: varchar
+          - name: latitude
+            description: Latitud GPS. Puede contener coma decimal en vez de punto (export Excel).
+            data_type: varchar
+          - name: longitude
+            description: Longitud GPS. Puede contener coma decimal en vez de punto (export Excel).
+            data_type: varchar
+          - name: positional_accuracy
+            description: Precisión GPS. Contiene valores mixtos ("49.0", "49 m", "unknown").
+            data_type: number
+          - name: place_town_name
+            description: Municipio del avistamiento. 96.9% null — se descarta en staging.
+            data_type: varchar
+          - name: place_county_name
+            description: Provincia o región del avistamiento.
+            data_type: varchar
+          - name: place_country_name
+            description: País. Contiene variantes (Spain/España/SPAIN) — se normaliza en staging.
+            data_type: varchar
+          - name: species_guess
+            description: Sugerencia de especie del observador. Redundante con scientific_name — se descarta en staging.
+            data_type: varchar
+          - name: scientific_name
+            description: Nombre científico de la especie identificada.
+            data_type: varchar
+          - name: common_name
+            description: Nombre común de la especie. Redundante con dim_especie — se descarta en staging.
+            data_type: varchar
+          - name: iconic_taxon_name
+            description: Grupo taxonómico principal (Aves, Mammalia). Mayúsculas inconsistentes.
+            data_type: varchar
+            tests:
+              - not_null:
+                  severity : warn #cuantos llegan asi
+          - name: taxon_id
+            description: ID interno de iNaturalist. No se usa en Silver — se descarta en staging.
+            data_type: number
+          - name: taxon_class_name
+            description: Clase taxonómica.
+            data_type: varchar
+          - name: taxon_family_name
+            description: Familia taxonómica. 0.6% null.
+            data_type: varchar
+          - name: taxon_genus_name
+            description: Género taxonómico. Redundante con scientific_name — se descarta en staging.
+            data_type: varchar
+          - name: taxon_species_name
+            description: Epíteto específico. Redundante con scientific_name — se descarta en staging.
+            data_type: varchar
+          - name: verificado
+            description: TRUE si un experto confirmó la identificación.
+            data_type: varchar

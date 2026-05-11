@@ -25,12 +25,12 @@ seeds:
     columns:
       - name: id_provincia
         description: PK numérica de la provincia.
-        data_tests:
+        tests:
           - unique
           - not_null
       - name: nombre
         description: Nombre de la provincia o región.
-        data_tests:
+        tests:
           - not_null
       - name: ccaa
         description: Comunidad autónoma (null para regiones fuera de España).
@@ -38,7 +38,7 @@ seeds:
         description: Código INE de dos caracteres (null para regiones extranjeras).
       - name: pais
         description: País al que pertenece la provincia o región.
-        data_tests:
+        tests:
           - not_null
           - accepted_values:
               arguments:
@@ -55,12 +55,12 @@ seeds:
     columns:
       - name: id_estado
         description: PK del estado de conservación.
-        data_tests:
+        tests:
           - unique
           - not_null
       - name: codigo
         description: Código del estado (LC, NT, VU, EN, CR, EX, NE, EEI).
-        data_tests:
+        tests:
           - not_null
           - accepted_values:
               arguments:
@@ -69,11 +69,11 @@ seeds:
         description: >
           Nivel de riesgo numérico (0=sin datos, 1=menor riesgo, 5=crítico).
           Útil para ordenar y filtrar en Gold sin joins adicionales.
-        data_tests:
+        tests:
           - not_null
       - name: fuente
         description: Organismo que asigna el estado (IUCN o LESRPE).
-        data_tests:
+        tests:
           - not_null
           - accepted_values:
               arguments:
@@ -90,12 +90,12 @@ seeds:
     columns:
       - name: id_tipo_amenaza
         description: PK del tipo de amenaza.
-        data_tests:
+        tests:
           - unique
           - not_null
       - name: nombre
         description: Nombre corto del tipo de amenaza.
-        data_tests:
+        tests:
           - unique
           - not_null
           - accepted_values:
@@ -109,5 +109,5 @@ seeds:
                   - 'Cambio climático'
       - name: descripcion
         description: Descripción extendida del tipo de amenaza.
-        data_tests:
+        tests:
           - not_null
