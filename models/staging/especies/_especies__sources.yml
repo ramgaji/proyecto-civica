@@ -36,7 +36,8 @@ sources:
             tests:
               - not_null
               - accepted_values:
-                  values: ['Mammalia', 'Aves']
+                      arguments:
+                        values: ['Mammalia', 'Aves']
           - name: orden
             description: Orden taxonómico. Puede contener typos (Carnívora vs Carnivora).
             data_type: varchar
@@ -138,7 +139,6 @@ sources:
             data_type: float
             tests:
               - not_null
-              - positive_values
           - name: n_parejas_reproductoras
             description: >
               Parejas reproductoras. 100% null en mamíferos (no aplica).

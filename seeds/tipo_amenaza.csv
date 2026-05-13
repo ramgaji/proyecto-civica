@@ -1,7 +1,7 @@
 id_tipo_amenaza,nombre,descripcion
-1,Pérdida de hábitat,Destrucción o degradación del hábitat natural por actividad humana (urbanización, agricultura intensiva, deforestación)
-2,Caza/Furtivismo,Caza legal o ilegal y persecución directa de la especie
-3,Atropellos,Mortalidad por colisión con vehículos en infraestructuras viarias
-4,Especies invasoras,Competencia o depredación por especies exóticas invasoras introducidas
-5,Pesticidas/Contaminación,Exposición a pesticidas, contaminantes químicos o contaminación de agua y suelo
-6,Cambio climático,Alteración del hábitat y recursos por cambio climático (temperatura, precipitación, fenología)
+1,Pérdida de hábitat,"Destrucción o degradación del hábitat natural por actividad humana (urbanización, agricultura intensiva, deforestación)"
+2,Caza/Furtivismo,"Caza legal o ilegal y persecución directa de la especie"
+3,Atropellos,"Mortalidad por colisión con vehículos en infraestructuras viarias"
+4,Especies invasoras,"Competencia o depredación por especies exóticas invasoras introducidas"
+5,Pesticidas/Contaminación,"Exposición a pesticidas, contaminantes químicos o contaminación de agua y suelo"
+6,Cambio climático,"Alteración del hábitat y recursos por cambio climático (temperatura, precipitación, fenología)"

@@ -12,3 +12,4 @@ id_estado,codigo,descripcion,nivel_riesgo,fuente
 11,VU,Vulnerable,3,LESRPE
 12,EN,En peligro,4,LESRPE
 13,CR,En peligro crítico,5,LESRPE
+14,NE,No evaluado,0,LESRPE

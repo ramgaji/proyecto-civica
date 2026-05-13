@@ -1,0 +1,708 @@
+version: 2
+
+models:
+
+  # ==========================================================================
+  # JERARQUÍA TAXONÓMICA
+  # clase → orden → familia → especie
+  # ==========================================================================
+
+  - name: stg_mix__taxonomia_clase
+    description: >
+      Catálogo de clases taxonómicas. Primera tabla de la jerarquía
+      clase → orden → familia → especie. En este proyecto solo contiene
+      Mammalia y Aves — los grupos presentes en los datos de iNaturalist.
+    columns:
+      - name: id_clase
+        description: Surrogate key MD5 generada con dbt_utils.generate_surrogate_key(['clase']).
+        data_type: varchar
+        tests:
+          - unique
+          - not_null
+      - name: nombre_clase
+        description: Nombre de la clase taxonómica (Mammalia, Aves).
+        data_type: varchar
+        tests:
+          - unique
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['Mammalia', 'Aves']
+
+  - name: stg_mix__taxonomia_orden
+    description: >
+      Catálogo de órdenes taxonómicos con FK a su clase padre.
+      Segunda tabla de la jerarquía taxonómica.
+    columns:
+      - name: id_orden
+        description: Surrogate key MD5 generada con dbt_utils.generate_surrogate_key(['orden']).
+        data_type: varchar
+        tests:
+          - unique
+          - not_null
+      - name: nombre_orden
+        description: Nombre del orden taxonómico (Carnivora, Passeriformes...).
+        data_type: varchar
+        tests:
+          - unique
+          - not_null
+      - name: id_clase
+        description: FK a stg_mix__taxonomia_clase.
+        data_type: varchar
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_mix__taxonomia_clase')
+                field: id_clase
+
+  - name: stg_mix__taxonomia_familia
+    description: >
+      Catálogo de familias taxonómicas con FK a su orden padre.
+      Tercera tabla de la jerarquía taxonómica.
+    columns:
+      - name: id_familia
+        description: Surrogate key MD5 generada con dbt_utils.generate_surrogate_key(['familia']).
+        data_type: varchar
+        tests:
+          - unique
+          - not_null
+      - name: nombre_familia
+        description: Nombre de la familia taxonómica (Felidae, Canidae...).
+        data_type: varchar
+        tests:
+          - unique
+          - not_null
+      - name: id_orden
+        description: FK a stg_mix__taxonomia_orden.
+        data_type: varchar
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_mix__taxonomia_orden')
+                field: id_orden
+
+  # ==========================================================================
+  # CATÁLOGOS DE CONSERVACIÓN
+  # ==========================================================================
+
+  - name: stg_mix__estado_conservacion
+    description: >
+      Catálogo de estados de conservación según IUCN (global) y LESRPE
+      (España). 13 filas — 6 códigos IUCN + 7 LESRPE. El campo nivel_riesgo
+      permite ordenar y filtrar sin joins adicionales en Gold.
+      Una especie tiene dos estados: uno IUCN y uno LESRPE — permite comparar
+      criterio global vs criterio español (ej: Lobo ibérico LC global / VU España).
+    columns:
+      - name: id_estado
+        description: PK del seed estado_conservacion.
+        data_type: number
+        tests:
+          - unique
+          - not_null
+      - name: codigo
+        description: Código del estado (LC, NT, VU, EN, CR, EX, NE, EEI).
+        data_type: varchar
+        tests:
+          - not_null
+      - name: descripcion
+        description: Descripción del estado de conservación.
+        data_type: varchar
+        tests:
+          - not_null
+      - name: nivel_riesgo
+        description: >
+          Nivel de riesgo numérico (0=sin datos, 1=menor riesgo, 5=crítico).
+          Usado en Gold para ordenar especies por urgencia de conservación.
+        data_type: number
+        tests:
+          - not_null
+      - name: fuente
+        description: Organismo que asigna el estado (IUCN o LESRPE).
+        data_type: varchar
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['IUCN', 'LESRPE']
+
+  - name: stg_mix__cites_apendice
+    description: >
+      Catálogo de apéndices CITES generado desde los valores distintos del
+      catálogo de especies. CITES regula el comercio internacional de especies:
+      I=prohibido, II=con permisos, III=protección en países específicos, –=sin regulación.
+    columns:
+      - name: id_cites
+        description: Surrogate key MD5 generada con dbt_utils.generate_surrogate_key(['cites_apendice']).
+        data_type: varchar
+        tests:
+          - unique
+          - not_null
+      - name: apendice
+        description: Código del apéndice CITES.
+        data_type: varchar
+        tests:
+          - unique
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['I', 'II', 'III', '–']
+      - name: descripcion
+        description: Descripción del nivel de protección CITES.
+        data_type: varchar
+        tests:
+          - not_null
+
+  # ==========================================================================
+  # ESPECIE Y AMENAZA
+  # ==========================================================================
+
+  - name: stg_mix__especie
+    description: >
+      Tabla maestra de especies. Integra taxonomía, estados de conservación
+      IUCN y LESRPE, y CITES en una sola entidad con FKs explícitas.
+      Base del snapshot SCD2 (especie_snapshot) y de dim_especie en Gold.
+      Dos FKs a estado_conservacion permiten comparar criterio global vs español.
+    columns:
+      - name: id_especie
+        description: Surrogate key MD5 generada con dbt_utils.generate_surrogate_key(['nombre_cientifico']).
+        data_type: varchar
+        tests:
+          - unique
+          - not_null
+      - name: nombre_cientifico
+        description: Nombre científico de la especie (PK natural del catálogo).
+        data_type: varchar
+        tests:
+          - unique
+          - not_null
+      - name: nombre_comun_es
+        description: Nombre común en español normalizado con INITCAP.
+        data_type: varchar
+        tests:
+          - not_null
+      - name: nombre_comun_en
+        description: Nombre común en inglés. 8.5% null — aceptable.
+        data_type: varchar
+      - name: clase
+        description: Clase taxonómica (Mammalia o Aves).
+        data_type: varchar
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['Mammalia', 'Aves']
+      - name: id_familia
+        description: FK a stg_mix__taxonomia_familia.
+        data_type: varchar
+        tests:
+          - relationships:
+              arguments:
+                to: ref('stg_mix__taxonomia_familia')
+                field: id_familia
+              config:
+                severity: warn
+      - name: id_estado_iucn
+        description: FK a stg_mix__estado_conservacion (fuente=IUCN). Estado global.
+        data_type: number
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_mix__estado_conservacion')
+                field: id_estado
+      - name: id_estado_espana
+        description: FK a stg_mix__estado_conservacion (fuente=LESRPE). Estado en España.
+        data_type: number
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_mix__estado_conservacion')
+                field: id_estado
+      - name: endemismo
+        description: TRUE si endémica de la Península Ibérica.
+        data_type: boolean
+        tests:
+          - not_null
+      - name: es_migratoria
+        description: TRUE si la especie realiza migraciones estacionales.
+        data_type: boolean
+        tests:
+          - not_null
+      - name: tipo_migracion
+        description: Tipo de migración (Estival/Invernante/Residente/Transeúnte). NULL si no migratoria.
+        data_type: varchar
+      - name: id_cites
+        description: FK a stg_mix__cites_apendice.
+        data_type: varchar
+        tests:
+          - relationships:
+              arguments:
+                to: ref('stg_mix__cites_apendice')
+                field: id_cites
+              config:
+                severity: warn
+      - name: descripcion
+        description: Descripción narrativa de la especie. Metadato informativo — no se expone en Gold.
+        data_type: varchar
+      - name: fuente_taxonomica
+        description: Organismo fuente de la clasificación taxonómica.
+        data_type: varchar
+      - name: amenaza_raw
+        description: >
+          Amenazas en crudo separadas por '|'. Se parsea en stg_mix__amenaza
+          con SPLIT_TO_TABLE para normalizar en una fila por amenaza.
+        data_type: varchar
+
+  - name: stg_mix__amenaza
+    description: >
+      Tabla normalizada de amenazas activas por especie. Granularidad: una
+      fila por (especie, tipo_amenaza). Generada con SPLIT_TO_TABLE sobre el
+      campo amenaza_raw — función nativa Snowflake que divide por '|'.
+      Catálogo cerrado de 6 tipos: Pérdida de hábitat / Caza/Furtivismo /
+      Atropellos / Especies invasoras / Pesticidas/Contaminación / Cambio climático.
+    columns:
+      - name: id_amenaza
+        description: Surrogate key MD5 generada con dbt_utils.generate_surrogate_key(['id_especie','tipo_amenaza']).
+        data_type: varchar
+        tests:
+          - unique
+          - not_null
+      - name: id_especie
+        description: FK a stg_mix__especie.
+        data_type: varchar
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_mix__especie')
+                field: id_especie
+      - name: nombre_cientifico
+        description: Nombre científico de la especie (desnormalizado para legibilidad).
+        data_type: varchar
+        tests:
+          - not_null
+      - name: tipo_amenaza
+        description: Tipo de amenaza del catálogo cerrado de 6 valores.
+        data_type: varchar
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - 'Pérdida de hábitat'
+                  - 'Caza/Furtivismo'
+                  - 'Atropellos'
+                  - 'Especies invasoras'
+                  - 'Pesticidas/Contaminación'
+                  - 'Cambio climático'
+
+  # ==========================================================================
+  # GEOGRAFÍA
+  # ==========================================================================
+
+  - name: stg_mix__provincia
+    description: >
+      Catálogo de provincias españolas y regiones de Francia, Portugal y
+      Marruecos. Expone el seed provincia_ccaa como modelo Silver.
+      Usado como lookup por localizacion y censo_poblacion.
+    columns:
+      - name: id_provincia
+        description: PK del seed provincia_ccaa.
+        data_type: number
+        tests:
+          - unique
+          - not_null
+      - name: nombre
+        description: Nombre de la provincia o región.
+        data_type: varchar
+        tests:
+          - not_null
+      - name: ccaa
+        description: Comunidad autónoma. NULL para regiones fuera de España.
+        data_type: varchar
+      - name: codigo_ine
+        description: Código INE de dos caracteres. NULL para regiones extranjeras.
+        data_type: varchar
+      - name: pais
+        description: País al que pertenece la provincia o región.
+        data_type: varchar
+        tests:
+          - not_null
+
+  - name: stg_mix__area_protegida
+    description: >
+      Tabla normalizada de áreas protegidas con FK a provincia. Mantiene el
+      bounding box (lat/lon min/max) para el join espacial con avistamientos
+      en stg_mix__localizacion. Cubre España, Francia, Portugal y Marruecos.
+    columns:
+      - name: id_area_protegida
+        description: Surrogate key MD5 generada con dbt_utils.generate_surrogate_key(['id_area']).
+        data_type: varchar
+        tests:
+          - unique
+          - not_null
+      - name: id_area_natural
+        description: ID original del CSV de áreas protegidas. Natural key para trazabilidad.
+        data_type: number
+        tests:
+          - unique
+          - not_null
+      - name: nombre
+        description: Nombre del espacio protegido.
+        data_type: varchar
+        tests:
+          - not_null
+      - name: tipo_area
+        description: Tipo de protección (Parque Nacional, Zepa, Lic...).
+        data_type: varchar
+        tests:
+          - not_null
+      - name: es_lic
+        description: TRUE si es Lugar de Importancia Comunitaria (Red Natura 2000).
+        data_type: boolean
+        tests:
+          - not_null
+      - name: es_zepa
+        description: TRUE si es Zona de Especial Protección para las Aves.
+        data_type: boolean
+        tests:
+          - not_null
+      - name: es_parque_nacional
+        description: TRUE si tiene la figura de Parque Nacional.
+        data_type: boolean
+        tests:
+          - not_null
+      - name: pais
+        description: País donde se ubica el área.
+        data_type: varchar
+        tests:
+          - not_null
+      - name: id_provincia
+        description: FK a stg_mix__provincia.
+        data_type: number
+        tests:
+          - relationships:
+              arguments:
+                to: ref('stg_mix__provincia')
+                field: id_provincia
+              config:
+                severity: warn
+      - name: lat_min
+        description: Latitud mínima del bounding box. Usada en el join espacial.
+        data_type: number
+        tests:
+          - not_null
+      - name: lat_max
+        description: Latitud máxima del bounding box.
+        data_type: number
+        tests:
+          - not_null
+      - name: lon_min
+        description: Longitud mínima del bounding box.
+        data_type: number
+        tests:
+          - not_null
+      - name: lon_max
+        description: Longitud máxima del bounding box.
+        data_type: number
+        tests:
+          - not_null
+      - name: superficie_ha
+        description: Superficie en hectáreas redondeada a entero.
+        data_type: number
+        tests:
+          - positive_values
+      - name: anio_declaracion
+        description: Año de declaración. 6.3% null — datos históricos mal documentados.
+        data_type: number
+      - name: entidad_gestora
+        description: Entidad responsable normalizada (MITECO, ICNF, SEO/BirdLife...).
+        data_type: varchar
+      - name: codigo_red_natura
+        description: Código oficial Red Natura 2000. NULL fuera de España — esperado.
+        data_type: varchar
+
+  # ==========================================================================
+  # OBSERVADOR
+  # ==========================================================================
+
+  - name: stg_mix__observador
+    description: >
+      Observadores únicos extraídos de los avistamientos de iNaturalist.
+      Clasificados como Ciudadano / Científico / Anónimo según patrones
+      en el nombre de usuario. Es una aproximación — iNaturalist no distingue
+      formalmente entre tipos de observador.
+    columns:
+      - name: id_observador
+        description: Surrogate key MD5 generada con dbt_utils.generate_surrogate_key(['observador_raw']).
+        data_type: varchar
+        tests:
+          - unique
+          - not_null
+      - name: nombre
+        description: Nombre del observador limpio. 'observador_anonimo' si era null o email.
+        data_type: varchar
+        tests:
+          - unique
+          - not_null
+      - name: tipo
+        description: Clasificación del observador (Ciudadano / Científico / Anónimo).
+        data_type: varchar
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['Ciudadano', 'Científico', 'Anónimo']
+
+  # ==========================================================================
+  # LOCALIZACIÓN Y AVISTAMIENTO
+  # ==========================================================================
+
+  - name: stg_mix__localizacion
+    description: >
+      Enriquece cada avistamiento con su área protegida y provincia mediante
+      join espacial por bounding box. Granularidad: una fila por avistamiento.
+      Si el avistamiento cae en varias áreas solapadas, QUALIFY selecciona
+      la más restrictiva (Parque Nacional > ZEPA > LIC).
+      Limitación: bounding box es rectangular — aproximación geográfica válida
+      para v1. En v2 se sustituiría por polígonos reales con Snowflake H3.
+    columns:
+      - name: id_localizacion
+        description: Surrogate key MD5 generada con dbt_utils.generate_surrogate_key(['id_avistamiento']).
+        data_type: varchar
+        tests:
+          - unique
+          - not_null
+      - name: id_avistamiento
+        description: FK al ID natural del avistamiento en iNaturalist.
+        data_type: number
+        tests:
+          - unique
+          - not_null
+      - name: latitud
+        description: Latitud GPS del avistamiento.
+        data_type: float
+        tests:
+          - not_null
+      - name: longitud
+        description: Longitud GPS del avistamiento.
+        data_type: float
+        tests:
+          - not_null
+      - name: municipio_raw
+        description: Provincia o región raw del avistamiento (place_county_name de iNaturalist).
+        data_type: varchar
+      - name: id_provincia
+        description: FK a stg_mix__provincia. NULL si la provincia no está en el lookup.
+        data_type: number
+        tests:
+          - relationships:
+              arguments:
+                to: ref('stg_mix__provincia')
+                field: id_provincia
+              config:
+                severity: warn
+      - name: pais
+        description: País normalizado del avistamiento.
+        data_type: varchar
+        tests:
+          - not_null
+      - name: id_area_protegida
+        description: FK a stg_mix__area_protegida. NULL si el avistamiento está fuera de área protegida.
+        data_type: varchar
+        tests:
+          - relationships:
+              arguments:
+                to: ref('stg_mix__area_protegida')
+                field: id_area_protegida
+              config:
+                severity: warn
+      - name: es_lic
+        description: TRUE si el avistamiento ocurrió dentro de un LIC. FALSE si fuera.
+        data_type: boolean
+        tests:
+          - not_null
+      - name: es_zepa
+        description: TRUE si el avistamiento ocurrió dentro de una ZEPA. FALSE si fuera.
+        data_type: boolean
+        tests:
+          - not_null
+      - name: es_parque_nacional
+        description: TRUE si el avistamiento ocurrió dentro de un Parque Nacional.
+        data_type: boolean
+        tests:
+          - not_null
+
+  - name: stg_mix__avistamiento
+    description: >
+      Tabla de hechos Silver de avistamientos. Modelo INCREMENTAL con
+      estrategia MERGE — procesa solo registros nuevos o modificados en cada
+      ejecución usando fecha como watermark (margen de 1 hora para late-arriving data).
+      iNaturalist permite corregir identificaciones después de publicar — con
+      merge el registro se actualiza en vez de duplicarse.
+      Granularidad: una fila por avistamiento.
+    columns:
+      - name: id_avistamiento
+        description: Surrogate key MD5. PK de la tabla.
+        data_type: varchar
+        tests:
+          - unique
+          - not_null
+      - name: id_avistamiento_natural
+        description: >
+          ID original de iNaturalist. unique_key del merge — garantiza
+          idempotencia. Si el mismo avistamiento llega dos veces, el merge
+          actualiza en vez de duplicar.
+        data_type: number
+        tests:
+          - unique
+          - not_null
+      - name: fecha
+        description: Fecha del avistamiento. Watermark del modelo incremental.
+        data_type: date
+        tests:
+          - not_null
+      - name: hora_utc
+        description: Timestamp UTC del avistamiento. NULL si la foto no tiene metadatos EXIF.
+        data_type: timestamp_tz
+      - name: id_especie
+        description: >
+          FK a stg_mix__especie. NULL si la especie no está en el catálogo.
+          Los avistamientos sin especie catalogada se excluyen en Gold con
+          WHERE estado_catalogo = 'Catalogada'.
+        data_type: varchar
+        tests:
+          - relationships:
+              arguments:
+                to: ref('stg_mix__especie')
+                field: id_especie
+              config:
+                severity: warn
+      - name: id_localizacion
+        description: FK a stg_mix__localizacion.
+        data_type: varchar
+        tests:
+          - unique
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_mix__localizacion')
+                field: id_localizacion
+      - name: id_observador
+        description: FK a stg_mix__observador.
+        data_type: varchar
+        tests:
+          - relationships:
+              arguments:
+                to: ref('stg_mix__observador')
+                field: id_observador
+              config:
+                severity: warn
+      - name: verificado
+        description: TRUE si un experto confirmó la identificación.
+        data_type: boolean
+        tests:
+          - not_null
+      - name: fuente
+        description: Fuente del avistamiento. Siempre 'iNaturalist' en este source.
+        data_type: varchar
+        tests:
+          - not_null
+      - name: precision_gps_m
+        description: Precisión GPS en metros. NULL si no disponible.
+        data_type: number
+      - name: estado_catalogo
+        description: >
+          'Catalogada' si la especie está en el catálogo, 'Sin catalogar' si no.
+          Permite filtrar en Gold sin JOIN adicional.
+        data_type: varchar
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['Catalogada', 'Sin catalogar']
+
+  # ==========================================================================
+  # CENSO
+  # ==========================================================================
+
+  - name: stg_mix__censo_poblacion
+    description: >
+      Tabla de censos de población normalizada con FKs a especie y provincia.
+      Granularidad: una fila por (especie, provincia, año).
+      Base de fct_censo_anual en Gold donde se calculan tendencias con LAG().
+      El campo aplica_parejas indica si n_parejas_reproductoras tiene sentido
+      para esa especie (TRUE para Aves, FALSE para Mammalia).
+    columns:
+      - name: id_censo
+        description: >
+          Surrogate key MD5 generada con dbt_utils.generate_surrogate_key(
+          ['nombre_cientifico','anio_censo','provincia']).
+        data_type: varchar
+        tests:
+          - unique
+          - not_null
+      - name: id_especie
+        description: FK a stg_mix__especie.
+        data_type: varchar
+        tests:
+          - relationships:
+              arguments:
+                to: ref('stg_mix__especie')
+                field: id_especie
+              config:
+                severity: warn
+      - name: id_provincia
+        description: FK a stg_mix__provincia.
+        data_type: number
+        tests:
+          - relationships:
+              arguments:
+                to: ref('stg_mix__provincia')
+                field: id_provincia
+              config:
+                severity: warn
+      - name: anio
+        description: Año del censo.
+        data_type: number
+        tests:
+          - not_null
+      - name: provincia
+        description: Nombre de la provincia del censo.
+        data_type: varchar
+        tests:
+          - not_null
+      - name: ccaa
+        description: Comunidad autónoma normalizada.
+        data_type: varchar
+      - name: n_individuos_estimados
+        description: Individuos estimados. Valores <= 0 convertidos a NULL en staging.
+        data_type: float
+        tests:
+          - positive_values
+      - name: n_parejas_reproductoras
+        description: Parejas reproductoras. NULL en mamíferos — no aplica.
+        data_type: float
+      - name: aplica_parejas
+        description: >
+          TRUE si n_parejas_reproductoras aplica a esta especie (Aves).
+          FALSE para Mammalia. Derivado del JOIN con stg_mix__especie.
+        data_type: boolean
+        tests:
+          - not_null
+      - name: metodo_censo
+        description: Metodología del censo normalizada con INITCAP.
+        data_type: varchar
+        tests:
+          - not_null
+      - name: entidad_responsable
+        description: Entidad que realizó el censo normalizada.
+        data_type: varchar
+        tests:
+          - not_null
+      - name: fuente_doc
+        description: Documento fuente del censo. 1.5% null — aceptable.
+        data_type: varchar

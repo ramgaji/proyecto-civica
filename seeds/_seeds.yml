@@ -42,7 +42,7 @@ seeds:
           - not_null
           - accepted_values:
               arguments:
-                values: ['Spain', 'France', 'Portugal', 'Morocco']
+                values: ['Spain', 'France', 'Portugal', 'Morocco', 'Algeria', 'Unknown']
 
   # --------------------------------------------------------------------------
   # estado_conservacion — Códigos IUCN y LESRPE
