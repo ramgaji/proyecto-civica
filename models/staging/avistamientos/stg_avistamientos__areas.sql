@@ -3,16 +3,27 @@
 -- ===========================================================================
 -- CAPA:   Staging (Silver)
 -- FUENTE: source('avistamientos', 'areas')
--- SCHEMA: {{ env_var('DBT_ENVIRONMENTS') }}_SILVER_DB.avistamientos
 -- MATERIALIZACIÓN: view
 --
--- LIMPIEZA APLICADA:
---   1. nombre         → TRIM() para eliminar espacios extra
---   2. tipo_area      → INITCAP(TRIM()) para normalizar mayúsculas
---   3. entidad_gestora→ normalizar variantes (MITECO/Miteco/miteco)
---   4. superficie_ha  → ROUND() para eliminar decimales de export Excel
---   5. anio_declaracion → CAST a int (puede venir como float)
---   6. ccaa / pais    → TRIM()
+-- OBJETIVO:
+--   Limpieza mínima de áreas protegidas para construir:
+--   - area_protegida
+--   - entidad_gestora
+--
+-- COLUMNAS FINALES:
+--   - id_area_natural
+--   - nombre
+--   - es_lic
+--   - es_zepa
+--   - es_parque_nacional
+--   - provincia
+--   - ccaa
+--   - lat_min / lat_max
+--   - lon_min / lon_max
+--   - superficie_ha
+--   - anio_declaracion
+--   - entidad_gestora
+--   - codigo_red_natura
 -- ===========================================================================
 
 with src as (
@@ -25,50 +36,53 @@ with src as (
 cleaned as (
 
     select
-        -- ── PK ───────────────────────────────────────────────────────────────
-          id_area
 
-        -- ── NOMBRE Y TIPO ────────────────────────────────────────────────────
-        , trim(nombre)                                           as nombre
-        -- Normalizar mayúsculas: 'parque nacional' → 'Parque Nacional'
-        , initcap(trim(tipo_area))                              as tipo_area
+        -- ── PK NATURAL ──────────────────────────────────────────────────────
+          id_area                                              as id_area_natural
 
-        -- ── CATEGORÍAS DE PROTECCIÓN ─────────────────────────────────────────
-        , es_lic
-        , es_zepa
-        , es_parque_nacional
+        -- ── IDENTIFICACIÓN ──────────────────────────────────────────────────
+        , trim(nombre)                                         as nombre
 
-        -- ── GEOGRAFÍA ────────────────────────────────────────────────────────
-        , trim(pais)                                            as pais
-        , trim(provincia)                                       as provincia
-        , trim(ccaa)                                            as ccaa
+        -- ── PROTECCIONES ────────────────────────────────────────────────────
+        , es_lic::boolean                                      as es_lic
+        , es_zepa::boolean                                     as es_zepa
+        , es_parque_nacional::boolean                          as es_parque_nacional
 
-        -- Bounding box para el join espacial con observaciones
-        , lat_min
-        , lat_max
-        , lon_min
-        , lon_max
+        -- ── GEOGRAFÍA ───────────────────────────────────────────────────────
+        , trim(provincia)                                      as provincia
+        , trim(ccaa)                                           as ccaa
 
-        -- ── MÉTRICAS ─────────────────────────────────────────────────────────
-        -- Eliminar decimales de export Excel (ej: 54252.3 → 54252)
-        , round(superficie_ha)::integer                         as superficie_ha
+        -- Bounding box para joins espaciales
+        , try_to_double(replace(lat_min, ',', '.'))            as lat_min
+        , try_to_double(replace(lat_max, ',', '.'))            as lat_max
+        , try_to_double(replace(lon_min, ',', '.'))            as lon_min
+        , try_to_double(replace(lon_max, ',', '.'))            as lon_max
 
-        -- Año como int (puede venir como float por Excel)
-        , try_to_number(anio_declaracion::varchar)::integer              as anio_declaracion
+        -- ── MÉTRICAS ────────────────────────────────────────────────────────
+        , round(
+            try_to_double(replace(superficie_ha, ',', '.'))
+          )::integer                                           as superficie_ha
 
-        -- ── ENTIDAD GESTORA ───────────────────────────────────────────────────
-        -- Normalizar variantes: MITECO/Miteco/miteco → 'MITECO'
+        , try_to_number(anio_declaracion::varchar)::integer
+                                                                as anio_declaracion
+
+        -- ── ENTIDAD GESTORA ─────────────────────────────────────────────────
         , case
-            when upper(trim(entidad_gestora)) = 'MITECO'       then 'MITECO'
-            when upper(trim(entidad_gestora)) = 'ICNF'         then 'ICNF'
-            when upper(trim(entidad_gestora)) = 'SEO/BIRDLIFE' then 'SEO/BirdLife'
-            else trim(entidad_gestora)
-          end                                                   as entidad_gestora
+            when upper(trim(entidad_gestora)) = 'MITECO'
+                then 'MITECO'
 
-        , trim(codigo_red_natura)                               as codigo_red_natura
+            when upper(trim(entidad_gestora)) = 'SEO/BIRDLIFE'
+                then 'SEO/BirdLife'
+
+            else trim(entidad_gestora)
+
+          end                                                  as entidad_gestora
+
+        , trim(codigo_red_natura)                              as codigo_red_natura
 
     from src
 
 )
 
-select * from cleaned
+select *
+from cleaned

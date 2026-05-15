@@ -1,15 +1,9 @@
-id_estado,codigo,descripcion,nivel_riesgo,fuente
-1,LC,Preocupación menor,1,IUCN
-2,NT,Casi amenazado,2,IUCN
-3,VU,Vulnerable,3,IUCN
-4,EN,En peligro,4,IUCN
-5,CR,En peligro crítico,5,IUCN
-6,EX,Extinto,6,IUCN
-7,NE,No evaluado,0,IUCN
-8,EEI,Especie Exótica Invasora,0,LESRPE
-9,LC,Preocupación menor,1,LESRPE
-10,NT,Casi amenazado,2,LESRPE
-11,VU,Vulnerable,3,LESRPE
-12,EN,En peligro,4,LESRPE
-13,CR,En peligro crítico,5,LESRPE
-14,NE,No evaluado,0,LESRPE
+id_estado,codigo,descripcion,nivel_riesgo
+1,LC,Preocupación menor,1
+2,NT,Casi amenazado,2
+3,VU,Vulnerable,3
+4,EN,En peligro,4
+5,CR,En peligro crítico,5
+6,EX,Extinto,6
+7,NE,No evaluado,0
+8,EEI,Especie Exótica Invasora,0

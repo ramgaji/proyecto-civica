@@ -22,6 +22,5 @@ select
     , codigo
     , descripcion
     , nivel_riesgo
-    , fuente
 
 from {{ ref('estado_conservacion') }}

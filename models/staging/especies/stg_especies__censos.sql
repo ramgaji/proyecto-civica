@@ -3,105 +3,75 @@
 -- ===========================================================================
 -- CAPA:   Staging (Silver)
 -- FUENTE: source('especies', 'censos')
--- SCHEMA: {{ env_var('DBT_ENVIRONMENTS') }}_SILVER_DB.especies
 -- MATERIALIZACIÓN: view
 --
--- LIMPIEZA APLICADA:
---   1. especie_nombre_cientifico → TRIM()
---   2. anio_censo     → CAST a int (puede venir como float 2018.0 por Excel)
---   3. provincia/ccaa → TRIM() + normalización de tildes inconsistentes
---   4. n_individuos   → valores <= 0 → NULL (errores de exportación)
---   5. metodo_censo   → INITCAP(TRIM()) para normalizar mayúsculas
---   6. entidad        → normalizar variantes de nombre
---
--- CAMPO DERIVADO:
---   Se deriva del JOIN con el catálogo para no duplicar lógica en Gold.
---   Justificación: n_parejas_reproductoras es un indicador específico de aves
---   (número de parejas que crían). En mamíferos este dato no se recoge.
---
--- FILTROS:
---   - Excluir registros con anio_censo nulo o fuera del rango esperado
+-- OBJETIVO:
+--   Limpieza mínima de censos para construir:
+--   - censo_poblacion
+--   - entidad_gestora
+--   - provincia / ccaa
 -- ===========================================================================
 
-with src_censos as (
+with src as (
 
     select *
     from {{ source('especies', 'censos') }}
 
 ),
 
--- Necesitamos la clase para derivar aplica_parejas
-src_catalogo as (
-
-    select
-          trim(nombre_cientifico) as nombre_cientifico
-        , trim(clase)             as clase
-    from {{ source('especies', 'catalogo') }}
-    qualify row_number() over (
-        partition by trim(lower(nombre_cientifico))
-        order by nombre_cientifico
-    ) = 1
-
-),
-
 cleaned as (
 
     select
-        -- ── ESPECIE ───────────────────────────────────────────────────────────
-          trim(c.especie_nombre_cientifico)                      as nombre_cientifico
 
-        -- ── TIEMPO ───────────────────────────────────────────────────────────
-        -- Cast a int: puede venir como float (2018.0) por export Excel
-        , c.anio_censo::integer                                  as anio_censo
+        -- ── ESPECIE ─────────────────────────────────────────────────────────
+          trim(especie_nombre_cientifico)                      as nombre_cientifico
 
-        -- ── GEOGRAFÍA ────────────────────────────────────────────────────────
-        , trim(c.provincia)                                      as provincia
-        -- Normalizar tildes inconsistentes
+        -- ── GEOGRAFÍA ──────────────────────────────────────────────────────
+        , trim(provincia)                                      as provincia
+
         , trim(
             replace(replace(replace(replace(
-                c.ccaa,
+                ccaa,
             'Andalucia',        'Andalucía'),
             'Castilla y Leon',  'Castilla y León'),
             'Cataluna',         'Cataluña'),
             'Aragon',           'Aragón')
-          )                                                      as ccaa
+          )                                                    as ccaa
 
-        -- ── MÉTRICAS ─────────────────────────────────────────────────────────
-        -- Valores <= 0 son errores de exportación → NULL
+        -- ── ENTIDAD ────────────────────────────────────────────────────────
         , case
-            when c.n_individuos_estimados <= 0 then null
-            else c.n_individuos_estimados
-          end                                                    as n_individuos_estimados
+            when upper(trim(entidad_responsable))
+                 in ('SEO/BIRDLIFE', 'SEO / BIRDLIFE')
+                then 'SEO/BirdLife'
 
-        , c.n_parejas_reproductoras
+            when upper(trim(entidad_responsable)) = 'MITECO'
+                then 'MITECO'
 
-        -- Campo derivado: TRUE solo para Aves
-        -- Justificación: el censo de parejas reproductoras solo aplica a aves.
-        -- En mamíferos se registran individuos totales, no parejas.
+            when upper(trim(entidad_responsable)) = 'FEDENCA'
+                then 'FEDENCA'
 
-        -- ── METADATOS DEL CENSO ───────────────────────────────────────────────
-        , initcap(trim(c.metodo_censo))                         as metodo_censo
+            else trim(entidad_responsable)
 
-        -- Normalizar entidad responsable
+          end                                                  as entidad_responsable
+
+        -- ── TIEMPO ─────────────────────────────────────────────────────────
+        , anio_censo::integer                                  as anio
+
+        -- ── MÉTRICAS ───────────────────────────────────────────────────────
         , case
-            when upper(trim(c.entidad_responsable))
-                 in ('SEO/BIRDLIFE', 'SEO / BIRDLIFE')          then 'SEO/BirdLife'
-            when upper(trim(c.entidad_responsable)) = 'MITECO'  then 'MITECO'
-            when upper(trim(c.entidad_responsable)) = 'FEDENCA' then 'FEDENCA'
-            else trim(c.entidad_responsable)
-          end                                                    as entidad_responsable
+            when n_individuos_estimados <= 0 then null
+            else n_individuos_estimados
+          end                                                  as n_individuos_estimados
 
-        , c.fuente_doc
+        , n_parejas_reproductoras                              as n_parejas_reproductoras
 
-    from src_censos c
-    left join src_catalogo cat
-           on trim(lower(c.especie_nombre_cientifico))
-            = trim(lower(cat.nombre_cientifico))
 
-    -- Excluir registros con año nulo o fuera del rango del proyecto
-    where c.anio_censo is not null
-      and c.anio_censo::integer between {{ var('min_anio_censo') }} and 2030
+    from src
+
+    where anio_censo is not null
+      and anio_censo::integer between {{ var('min_anio_censo') }} and 2030
 
 )
 
-select * from cleaned
+select *
+from cleaned

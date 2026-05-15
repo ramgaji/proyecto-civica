@@ -1,28 +1,28 @@
 -- ===========================================================================
--- stg_mix__taxonomia_clase.sql
+-- stg_mix__tipo_migracion.sql
 -- ===========================================================================
 -- CAPA:   Staging Mix (Silver normalizado)
 -- FUENTE: ref('stg_especies__catalogo')
 -- MATERIALIZACIÓN: view
 --
 -- DIAGRAMA:
---   taxonomia_clase {
---     id_clase
---     nombre_clase
+--   tipo_migracion {
+--     id_tipo_migracion
+--     nombre
 --   }
 -- ===========================================================================
 
 with src as (
 
     select distinct
-          nombre_clase
+          tipo_migracion
     from {{ ref('stg_especies__catalogo') }}
-    where nombre_clase is not null
+    where tipo_migracion is not null
 
 )
 
 select
-      {{ dbt_utils.generate_surrogate_key(['nombre_clase']) }} as id_clase
-    , nombre_clase
+      row_number() over (order by tipo_migracion) as id_tipo_migracion
+    , tipo_migracion                              as nombre
 
 from src

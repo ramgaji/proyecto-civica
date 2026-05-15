@@ -1,68 +1,51 @@
-id_provincia,nombre,ccaa,codigo_ine,pais
-1,Álava,País Vasco,01,Spain
-2,Albacete,Castilla-La Mancha,02,Spain
-3,Alicante,Comunitat Valenciana,03,Spain
-4,Almería,Andalucía,04,Spain
-5,Ávila,Castilla y León,05,Spain
-6,Badajoz,Extremadura,06,Spain
-7,Islas Baleares,Islas Baleares,07,Spain
-8,Barcelona,Cataluña,08,Spain
-9,Burgos,Castilla y León,09,Spain
-10,Cáceres,Extremadura,10,Spain
-11,Cádiz,Andalucía,11,Spain
-12,Castellón,Comunitat Valenciana,12,Spain
-13,Ciudad Real,Castilla-La Mancha,13,Spain
-14,Córdoba,Andalucía,14,Spain
-15,A Coruña,Galicia,15,Spain
-16,Cuenca,Castilla-La Mancha,16,Spain
-17,Girona,Cataluña,17,Spain
-18,Granada,Andalucía,18,Spain
-19,Guadalajara,Castilla-La Mancha,19,Spain
-20,Guipúzcoa,País Vasco,20,Spain
-21,Huelva,Andalucía,21,Spain
-22,Huesca,Aragón,22,Spain
-23,Jaén,Andalucía,23,Spain
-24,León,Castilla y León,24,Spain
-25,Lleida,Cataluña,25,Spain
-26,La Rioja,La Rioja,26,Spain
-27,Lugo,Galicia,27,Spain
-28,Madrid,Comunidad de Madrid,28,Spain
-29,Málaga,Andalucía,29,Spain
-30,Murcia,Región de Murcia,30,Spain
-31,Navarra,Navarra,31,Spain
-32,Ourense,Galicia,32,Spain
-33,Asturias,Asturias,33,Spain
-34,Palencia,Castilla y León,34,Spain
-35,Las Palmas,Canarias,35,Spain
-36,Pontevedra,Galicia,36,Spain
-37,Salamanca,Castilla y León,37,Spain
-38,Santa Cruz de Tenerife,Canarias,38,Spain
-39,Cantabria,Cantabria,39,Spain
-40,Segovia,Castilla y León,40,Spain
-41,Sevilla,Andalucía,41,Spain
-42,Soria,Castilla y León,42,Spain
-43,Tarragona,Cataluña,43,Spain
-44,Teruel,Aragón,44,Spain
-45,Toledo,Castilla-La Mancha,45,Spain
-46,Valencia,Comunitat Valenciana,46,Spain
-47,Valladolid,Castilla y León,47,Spain
-48,Vizcaya,País Vasco,48,Spain
-49,Zamora,Castilla y León,49,Spain
-50,Zaragoza,Aragón,50,Spain
-51,Bouches-Du-Rhône,,FR,France
-52,Hérault,,FR,France
-53,Gard,,FR,France
-54,Haute-Garonne,,FR,France
-55,Var,,FR,France
-56,Pyrénées-Orientales,,FR,France
-57,Lisboa,,PT,Portugal
-58,Alcoutim,,PT,Portugal
-59,Marrakech,,MA,Morocco
-60,Bilbao,País Vasco,48,Spain
-61,Galicia,Galicia,,Spain
-62,Extremadura,Extremadura,,Spain
-63,Andalucía,Andalucía,,Spain
-64,Castilla y León,Castilla y León,,Spain
-65,Castilla-La Mancha,Castilla-La Mancha,,Spain
-66,Aragón,Aragón,,Spain
-67,Cataluña,Cataluña,,Spain
+id_provincia,nombre,ccaa
+1,Álava,País Vasco
+2,Albacete,Castilla-La Mancha
+3,Alicante,Comunitat Valenciana
+4,Almería,Andalucía
+5,Ávila,Castilla y León
+6,Badajoz,Extremadura
+7,Islas Baleares,Islas Baleares
+8,Barcelona,Cataluña
+9,Burgos,Castilla y León
+10,Cáceres,Extremadura
+11,Cádiz,Andalucía
+12,Castellón,Comunitat Valenciana
+13,Ciudad Real,Castilla-La Mancha
+14,Córdoba,Andalucía
+15,A Coruña,Galicia
+16,Cuenca,Castilla-La Mancha
+17,Girona,Cataluña
+18,Granada,Andalucía
+19,Guadalajara,Castilla-La Mancha
+20,Guipúzcoa,País Vasco
+21,Huelva,Andalucía
+22,Huesca,Aragón
+23,Jaén,Andalucía
+24,León,Castilla y León
+25,Lleida,Cataluña
+26,La Rioja,La Rioja
+27,Lugo,Galicia
+28,Madrid,Comunidad de Madrid
+29,Málaga,Andalucía
+30,Murcia,Región de Murcia
+31,Navarra,Navarra
+32,Ourense,Galicia
+33,Asturias,Asturias
+34,Palencia,Castilla y León
+35,Las Palmas,Canarias
+36,Pontevedra,Galicia
+37,Salamanca,Castilla y León
+38,Santa Cruz de Tenerife,Canarias
+39,Cantabria,Cantabria
+40,Segovia,Castilla y León
+41,Sevilla,Andalucía
+42,Soria,Castilla y León
+43,Tarragona,Cataluña
+44,Teruel,Aragón
+45,Toledo,Castilla-La Mancha
+46,Valencia,Comunitat Valenciana
+47,Valladolid,Castilla y León
+48,Vizcaya,País Vasco
+49,Zamora,Castilla y León
+50,Zaragoza,Aragón

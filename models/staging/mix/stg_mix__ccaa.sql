@@ -1,28 +1,32 @@
 -- ===========================================================================
--- stg_mix__taxonomia_clase.sql
+-- stg_mix__ccaa.sql
 -- ===========================================================================
 -- CAPA:   Staging Mix (Silver normalizado)
--- FUENTE: ref('stg_especies__catalogo')
+-- FUENTE: seed provincia_ccaa
 -- MATERIALIZACIÓN: view
 --
 -- DIAGRAMA:
---   taxonomia_clase {
---     id_clase
---     nombre_clase
+--   ccaa {
+--     id_ccaa
+--     nombre
 --   }
+--
+-- OBJETIVO:
+--   Generar catálogo único de comunidades autónomas españolas
+--   a partir del seed provincia_ccaa.
 -- ===========================================================================
 
 with src as (
 
     select distinct
-          nombre_clase
-    from {{ ref('stg_especies__catalogo') }}
-    where nombre_clase is not null
+          trim(ccaa) as nombre
+    from {{ ref('provincia_ccaa') }}
+    where ccaa is not null
 
 )
 
 select
-      {{ dbt_utils.generate_surrogate_key(['nombre_clase']) }} as id_clase
-    , nombre_clase
+      row_number() over (order by nombre) as id_ccaa
+    , nombre
 
 from src

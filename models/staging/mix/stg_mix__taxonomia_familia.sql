@@ -2,37 +2,45 @@
 -- stg_mix__taxonomia_familia.sql
 -- ===========================================================================
 -- CAPA:   Staging Mix (Silver normalizado)
--- FUENTE: ref('stg_especies__catalogo') + ref('stg_mix__taxonomia_orden')
--- SCHEMA: {{ env_var('DBT_ENVIRONMENTS') }}_SILVER_DB.mix
+-- FUENTE: ref('stg_especies__catalogo')
+--         ref('stg_mix__taxonomia_clase')
 -- MATERIALIZACIÓN: view
 --
--- OBJETIVO:
---   Extrae los valores únicos de familia taxonómica y los enlaza con su orden
---   padre mediante FK. Tercera tabla de la jerarquía taxonómica.
+-- DIAGRAMA:
+--   taxonomia_familia {
+--     id_familia
+--     nombre_familia
+--     id_clase
+--   }
 -- ===========================================================================
 
 with src as (
 
     select distinct
-          orden
-        , familia
+          nombre_familia
+        , nombre_clase
     from {{ ref('stg_especies__catalogo') }}
-    where familia is not null
+    where nombre_familia is not null
 
 ),
 
-orden as (
+clase as (
 
-    select id_orden, nombre_orden
-    from {{ ref('stg_mix__taxonomia_orden') }}
+    select
+          id_clase
+        , nombre_clase
+    from {{ ref('stg_mix__taxonomia_clase') }}
 
 )
 
 select
-      {{ dbt_utils.generate_surrogate_key(['src.familia']) }}  as id_familia
-    , src.familia                                               as nombre_familia
-    , orden.id_orden
+      {{ dbt_utils.generate_surrogate_key(['src.nombre_familia', 'src.nombre_clase']) }}
+                                                        as id_familia
+
+    , src.nombre_familia
+    , clase.id_clase
 
 from src
-left join orden
-       on src.orden = orden.nombre_orden
+
+left join clase
+       on trim(lower(src.nombre_clase)) = trim(lower(clase.nombre_clase))

@@ -4,53 +4,36 @@ models:
 
   # ==========================================================================
   # stg_avistamientos__observaciones
-  # Limpieza 1:1 de AVISTAMIENTOS.OBSERVACIONES (Bronze)
-  # Normaliza fechas, coordenadas, país y observador.
-  # Descarta columnas redundantes y >80% null.
+  # Limpieza mínima de observaciones iNaturalist
   # ==========================================================================
+
   - name: stg_avistamientos__observaciones
     description: >
-      Staging de avistamientos de fauna de iNaturalist. Fechas normalizadas
-      a DATE, coordenadas casteadas a float, país estandarizado, emails
-      eliminados de observador_raw. Solo Mammalia y Aves. Columnas redundantes
-      descartadas (species_guess, common_name, taxon_id, taxon_genus_name,
-      taxon_species_name, place_town_name).
+      Staging de avistamientos de fauna de iNaturalist.
+      Solo Mammalia y Aves en España.
+      Fechas normalizadas, coordenadas casteadas y taxonomía simplificada.
+
     columns:
 
-      - name: id_avistamiento
-        description: PK del avistamiento. ID original de iNaturalist.
+      - name: id_avistamiento_natural
+        description: ID natural del avistamiento en iNaturalist.
         data_type: number
         tests:
           - unique
           - not_null
 
       - name: fecha
-        description: >
-          Fecha del avistamiento normalizada a DATE. Origen — dos formatos
-          mezclados en Bronze (YYYY-MM-DD y DD/MM/YYYY) resueltos con CASE +
-          TO_DATE / TRY_TO_DATE en staging.
+        description: Fecha del avistamiento normalizada a DATE.
         data_type: date
         tests:
           - not_null
 
       - name: hora_utc
-        description: >
-          Timestamp UTC del avistamiento extraído del metadato EXIF de la foto.
-          NULL si la foto no tiene metadatos GPS o se subió manualmente.
-          Campo auxiliar — observed_on es la fecha principal.
-        data_type: timestamp_ntz
-
-      - name: observador_raw
-        description: >
-          Nombre del observador limpio. Emails convertidos a NULL (privacidad).
-          Nulls imputados a 'observador_anonimo' para no perder el JOIN con
-          dim_observador.
-        data_type: varchar
+        description: Hora UTC extraída del timestamp EXIF.
+        data_type: time
 
       - name: latitud
-        description: >
-          Latitud GPS casteada a float. Comas decimales (export Excel español)
-          sustituidas por puntos con REPLACE antes del TRY_TO_DOUBLE.
+        description: Latitud GPS casteada a float.
         data_type: float
         tests:
           - not_null
@@ -60,45 +43,27 @@ models:
                 lon_column: longitud
 
       - name: longitud
-        description: >
-          Longitud GPS casteada a float. Mismo tratamiento que latitud.
+        description: Longitud GPS casteada a float.
         data_type: float
         tests:
           - not_null
 
       - name: precision_gps_m
-        description: >
-          Precisión GPS en metros. Extraída con REGEXP_SUBSTR para ser
-          defensivos ante cualquier sufijo ('m', 'km', 'metros'...).
-          NULL si el valor era 'unknown' o no contenía dígitos.
+        description: Precisión GPS en metros.
         data_type: number
 
       - name: provincia_raw
-        description: Provincia o región del avistamiento. TRIM aplicado en staging.
+        description: Provincia del avistamiento.
         data_type: varchar
-
-      - name: pais
-        description: >
-          País normalizado. Variantes (Spain/España/SPAIN/France/Francia...)
-          resueltas con CASE UPPER(TRIM()) en staging.
-          Valores posibles: Spain, France, Portugal, Morocco.
-        data_type: varchar
-        tests:
-          - not_null
-          - accepted_values:
-              arguments:
-                values: ['Spain', 'France', 'Portugal', 'Morocco', 'Algeria' , 'Unknown']
 
       - name: nombre_cientifico
-        description: Nombre científico de la especie identificada. FK natural a stg_especies__catalogo.
+        description: Nombre científico de la especie.
         data_type: varchar
         tests:
           - not_null
 
-      - name: clase_raw
-        description: >
-          Clase taxonómica en mayúsculas (MAMMALIA / AVES). UPPER + TRIM
-          aplicado en staging para homogeneizar mayúsculas inconsistentes.
+      - name: nombre_clase
+        description: Clase taxonómica principal (MAMMALIA / AVES).
         data_type: varchar
         tests:
           - not_null
@@ -106,98 +71,75 @@ models:
               arguments:
                 values: ['MAMMALIA', 'AVES']
 
-      - name: taxon_clase
-        description: Clase taxonómica en formato original de iNaturalist (Aves / Mammalia).
-        data_type: varchar
-
-      - name: familia_raw
-        description: Familia taxonómica. 0.6% null — registros sin identificación completa.
+      - name: nombre_familia
+        description: Familia taxonómica.
         data_type: varchar
 
       - name: verificado
-        description: >
-          TRUE si un experto confirmó la identificación. NULL imputado a FALSE
-          con COALESCE en staging — un avistamiento sin verificar no es un error,
-          es uno pendiente de revisión.
+        description: TRUE si un experto confirmó la identificación.
         data_type: boolean
         tests:
           - not_null
 
       - name: fuente
-        description: Fuente del avistamiento. Siempre 'iNaturalist' en este source.
+        description: Fuente del avistamiento.
         data_type: varchar
         tests:
           - not_null
 
   # ==========================================================================
   # stg_avistamientos__areas
-  # Limpieza 1:1 de AVISTAMIENTOS.AREAS (Bronze)
-  # Normaliza tipo_area, entidad_gestora y superficie_ha.
+  # Limpieza mínima de áreas protegidas
   # ==========================================================================
+
   - name: stg_avistamientos__areas
     description: >
-      Staging de áreas protegidas de Red Natura 2000 y Parques Nacionales.
-      Nombres y tipo_area normalizados con INITCAP, superficie redondeada,
-      entidad_gestora estandarizada.
+      Staging de áreas protegidas españolas.
+      Bounding boxes y métricas normalizadas para joins espaciales.
+
     columns:
 
-      - name: id_area
-        description: PK del área protegida.
+      - name: id_area_natural
+        description: ID natural del área protegida.
         data_type: number
         tests:
           - unique
-          - not_null:
-              config:
-                severity: warn
-
-      - name: nombre
-        description: Nombre del área protegida sin espacios extra (TRIM aplicado).
-        data_type: varchar
-        tests:
           - not_null
 
-      - name: tipo_area
-        description: >
-          Tipo de protección normalizado con INITCAP (Parque Nacional, Zepa, Lic...).
-          Origen — mayúsculas inconsistentes en Bronze (parque nacional / PARQUE NACIONAL).
+      - name: nombre
+        description: Nombre del área protegida.
         data_type: varchar
         tests:
           - not_null
 
       - name: es_lic
-        description: TRUE si es Lugar de Importancia Comunitaria (Red Natura 2000).
+        description: TRUE si es LIC.
         data_type: boolean
         tests:
           - not_null
 
       - name: es_zepa
-        description: TRUE si es Zona de Especial Protección para las Aves.
+        description: TRUE si es ZEPA.
         data_type: boolean
         tests:
           - not_null
 
       - name: es_parque_nacional
-        description: TRUE si tiene la figura de Parque Nacional.
+        description: TRUE si es Parque Nacional.
         data_type: boolean
         tests:
           - not_null
 
-      - name: pais
-        description: País donde se ubica el área. TRIM aplicado.
-        data_type: varchar
-        tests:
-          - not_null
-
       - name: provincia
-        description: Provincia o región del área. TRIM aplicado.
+        description: Provincia del área protegida.
         data_type: varchar
 
       - name: ccaa
-        description: Comunidad autónoma. NULL para áreas de Francia, Portugal y Marruecos — esperado.
+        description: Comunidad autónoma.
         data_type: varchar
 
       - name: lat_min
-        description: Latitud mínima del bounding box. Usada en el join espacial con observaciones.
+        description: Latitud mínima del bounding box.
         data_type: number
         tests:
           - not_null
@@ -221,23 +163,19 @@ models:
           - not_null
 
       - name: superficie_ha
-        description: >
-          Superficie en hectáreas redondeada a entero. Origen — decimales
-          espurios por export Excel (54252.3 → 54252) eliminados con ROUND.
+        description: Superficie del área en hectáreas.
         data_type: number
         tests:
           - positive_values
 
       - name: anio_declaracion
-        description: Año de declaración del espacio protegido. 6.3% null — datos históricos mal documentados.
+        description: Año de declaración del área protegida.
         data_type: number
 
       - name: entidad_gestora
-        description: >
-          Entidad responsable normalizada (MITECO, ICNF, SEO/BirdLife...).
-          Origen — variantes de nombre en Bronze (MITECO/Miteco/miteco).
+        description: Entidad responsable del área protegida.
         data_type: varchar
 
       - name: codigo_red_natura
-        description: Código oficial Red Natura 2000 (ESxxxxxxx). NULL fuera de España — esperado.
+        description: Código oficial Red Natura 2000.
         data_type: varchar

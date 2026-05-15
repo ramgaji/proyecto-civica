@@ -15,11 +15,31 @@
 --   para enriquecer con CCAA y código INE.
 -- ===========================================================================
 
-select
-      id_provincia
-    , nombre
-    , ccaa
-    , codigo_ine
-    , pais
+with provincias as (
 
-from {{ ref('provincia_ccaa') }}
+    select
+          id_provincia
+        , trim(nombre) as nombre
+        , trim(ccaa)   as ccaa
+    from {{ ref('provincia_ccaa') }}
+
+),
+
+ccaa as (
+
+    select
+          id_ccaa
+        , nombre
+    from {{ ref('stg_mix__ccaa') }}
+
+)
+
+select
+      p.id_provincia
+    , p.nombre
+    , c.id_ccaa
+
+from provincias p
+
+left join ccaa c
+       on trim(lower(p.ccaa)) = trim(lower(c.nombre))

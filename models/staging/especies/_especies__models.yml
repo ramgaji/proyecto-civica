@@ -4,37 +4,34 @@ models:
 
   # ==========================================================================
   # stg_especies__catalogo
-  # Limpieza 1:1 de ESPECIES.CATALOGO (Bronze)
-  # Normaliza estado_iucn, endemismo, es_migratoria, cites_apendice.
-  # Deduplica por nombre_cientifico con QUALIFY ROW_NUMBER().
   # ==========================================================================
+
   - name: stg_especies__catalogo
     description: >
-      Staging del catálogo de especies. Estado IUCN normalizado a mayúsculas,
-      estado_espana imputado a 'NE' cuando null, CITES normalizado ('–' cuando
-      sin apéndice), endemismo y es_migratoria casteados a boolean.
-      Deduplicado por nombre_cientifico con QUALIFY ROW_NUMBER().
+      Staging del catálogo de especies. Limpia nombres, estados de conservación,
+      endemismo, CITES, migración y amenazas. Deduplicado por nombre_cientifico.
+
     columns:
 
       - name: nombre_cientifico
-        description: Nombre científico de la especie (PK natural). TRIM aplicado.
+        description: Nombre científico de la especie.
         data_type: varchar
         tests:
           - unique
           - not_null
 
       - name: nombre_comun_es
-        description: Nombre común en español normalizado con INITCAP y TRIM.
+        description: Nombre común en español.
         data_type: varchar
         tests:
           - not_null
 
       - name: nombre_comun_en
-        description: Nombre común en inglés. 8.5% null — aceptable.
+        description: Nombre común en inglés.
         data_type: varchar
 
-      - name: clase
-        description: Clase taxonómica (Mammalia o Aves).
+      - name: nombre_clase
+        description: Clase taxonómica.
         data_type: varchar
         tests:
           - not_null
@@ -42,33 +39,14 @@ models:
               arguments:
                 values: ['Mammalia', 'Aves']
 
-      - name: orden
-        description: >
-          Orden taxonómico. Typos corregidos en staging (Carnívora → Carnivora,
-          Artiodáctyla → Artiodactyla, Paseriformes → Passeriformes).
+      - name: nombre_familia
+        description: Familia taxonómica.
         data_type: varchar
         tests:
           - not_null
-
-      - name: familia
-        description: Familia taxonómica. TRIM aplicado.
-        data_type: varchar
-        tests:
-          - not_null
-
-      - name: genero
-        description: Género taxonómico.
-        data_type: varchar
-
-      - name: especie
-        description: Epíteto específico.
-        data_type: varchar
 
       - name: estado_iucn
-        description: >
-          Estado IUCN normalizado a código estándar de 2 letras.
-          Origen — formatos mixtos en Bronze (lc / LC / L.C. / LC ).
-          Normalizado con UPPER(TRIM(REPLACE(REPLACE(col,'.','',' ','')))).
+        description: Estado de conservación IUCN normalizado.
         data_type: varchar
         tests:
           - not_null
@@ -77,39 +55,26 @@ models:
                 values: ['LC', 'NT', 'VU', 'EN', 'CR', 'EX', 'NE', 'EEI']
 
       - name: estado_espana
-        description: >
-          Estado LESRPE español. NULL imputado a 'NE' (No Evaluado) con
-          COALESCE en staging. Distingue criterio global IUCN del nacional.
+        description: Estado de conservación en España.
         data_type: varchar
         tests:
           - not_null
+          - accepted_values:
+              arguments:
+                values: ['LC', 'NT', 'VU', 'EN', 'CR', 'EX', 'NE', 'EEI']
 
       - name: endemismo
-        description: >
-          TRUE si endémica de la Península Ibérica. Origen — string
-          'true'/'false' en Bronze, casteado a boolean con ::boolean en staging.
-        data_type: boolean
-        tests:
-          - not_null
-
-      - name: es_migratoria
-        description: >
-          TRUE si la especie realiza migraciones estacionales. Mismo tratamiento
-          que endemismo — string a boolean en staging.
+        description: TRUE si la especie es endémica.
         data_type: boolean
         tests:
           - not_null
 
       - name: tipo_migracion
-        description: >
-          Tipo de migración (Estival / Invernante / Residente / Transeúnte).
-          NULL para mamíferos y aves no migratorias — se refinará en stg_core__especie.
+        description: Tipo de migración de la especie.
         data_type: varchar
 
       - name: cites_apendice
-        description: >
-          Apéndice CITES normalizado. Origen — nulls, cadenas vacías y 'N/A'
-          en Bronze, todos normalizados a '–' (sin apéndice) en staging.
+        description: Apéndice CITES normalizado.
         data_type: varchar
         tests:
           - not_null
@@ -117,36 +82,23 @@ models:
               arguments:
                 values: ['I', 'II', 'III', '–']
 
-      - name: descripcion
-        description: Descripción de la especie. 4.5% null — aceptable.
-        data_type: varchar
-
-      - name: fuente_taxonomica
-        description: Organismo fuente de la clasificación (IUCN 2023...).
-        data_type: varchar
-
       - name: amenaza_raw
-        description: >
-          Amenazas activas separadas por '|' (máx. 3 por especie).
-          55% null en especies sin presión identificada — correcto.
-          Se parsea por '|' en stg_core__amenaza para normalizar en tabla propia.
+        description: Amenazas activas separadas por '|'.
         data_type: varchar
 
   # ==========================================================================
   # stg_especies__censos
-  # Limpieza 1:1 de ESPECIES.CENSOS (Bronze)
-  # Normaliza año, ccaa, entidad. Filtra valores <= 0 en n_individuos.
   # ==========================================================================
+
   - name: stg_especies__censos
     description: >
-      Staging de censos de población. Año casteado a int, valores <= 0 en
-      n_individuos_estimados convertidos a NULL, tildes inconsistentes en ccaa
-      normalizadas, entidad_responsable estandarizada.
-      Filtro temporal: solo años entre min_anio_censo (var dbt) y 2030.
+      Staging de censos de población. Limpia especie, provincia, entidad,
+      año, métricas de población y fuente documental.
+
     columns:
 
       - name: nombre_cientifico
-        description: Nombre científico de la especie. FK natural a stg_especies__catalogo.
+        description: Nombre científico de la especie.
         data_type: varchar
         tests:
           - not_null
@@ -157,61 +109,39 @@ models:
               config:
                 severity: warn
 
-      - name: anio_censo
-        description: >
-          Año del censo como entero. Origen — puede venir como float (2018.0)
-          por export Excel, casteado con ::integer en staging.
-        data_type: number
-        tests:
-          - not_null
-
       - name: provincia
-        description: Provincia o región del censo. TRIM aplicado.
+        description: Provincia del censo.
         data_type: varchar
         tests:
           - not_null
 
       - name: ccaa
-        description: >
-          Comunidad autónoma normalizada. Origen — variantes de tildes en Bronze
-          (Andalucia/Andalucía, Cataluna/Cataluña...) corregidas en staging.
-        data_type: varchar
-        tests:
-          - not_null
-
-      - name: n_individuos_estimados
-        description: >
-          Individuos estimados en ese año y provincia. Valores <= 0 convertidos
-          a NULL en staging (errores de exportación Excel: -1, 0).
-          Métrica principal de la tabla de censos.
-        data_type: float
-        tests:
-          - positive_values:
-              config:
-                severity: warn # avisa pero no para pipeline
-
-      - name: n_parejas_reproductoras
-        description: >
-          Parejas reproductoras. NULL en mamíferos — no aplica este indicador.
-          Solo significativo para Aves. Ver campo aplica_parejas en stg_core.
-        data_type: float
-
-      - name: metodo_censo
-        description: >
-          Metodología normalizada con INITCAP. Origen — minúsculas inconsistentes
-          en Bronze (fototrampeo / Fototrampeo / FOTOTRAMPEO).
+        description: Comunidad autónoma del censo.
         data_type: varchar
         tests:
           - not_null
 
       - name: entidad_responsable
-        description: >
-          Entidad que realizó el censo, normalizada. Origen — variantes de nombre
-          (SEO/BirdLife vs SEO / BirdLife, MITECO vs Miteco, FEDENCA vs fedenca).
+        description: Entidad responsable del censo.
         data_type: varchar
         tests:
           - not_null
 
-      - name: fuente_doc
-        description: Documento fuente del censo. 1.5% null — aceptable, metadato informativo.
-        data_type: varchar
+      - name: anio
+        description: Año del censo.
+        data_type: number
+        tests:
+          - not_null
+
+      - name: n_individuos_estimados
+        description: Individuos estimados.
+        data_type: float
+        tests:
+          - positive_values:
+              config:
+                severity: warn
+
+      - name: n_parejas_reproductoras
+        description: Parejas reproductoras.
+        data_type: float
+

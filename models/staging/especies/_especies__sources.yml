@@ -4,7 +4,7 @@ sources:
   - name: especies
     description: >
       Datos en bruto del catálogo de especies y censos de población de fauna
-      en España. Fuentes: MITECO, SEO/BirdLife, FEDENCA y Junta de Andalucía.
+      en España. Cargados desde CSV a Snowflake Bronze.
     schema: ESPECIES
     database: "{{ env_var('DBT_ENVIRONMENTS', 'FAIL') }}_BRONZE_DB"
 
@@ -12,150 +12,110 @@ sources:
 
       - name: catalogo
         description: >
-          Catálogo de 62 especies de mamíferos y aves con atributos taxonómicos,
-          estados de conservación (IUCN y LESRPE), endemismo, CITES, migración
-          y amenazas. Granularidad: una fila por especie.
+          Catálogo de especies con atributos taxonómicos, conservación,
+          endemismo, CITES, migración y amenazas.
+          Granularidad: una fila por especie.
         columns:
           - name: nombre_cientifico
-            description: Nombre científico de la especie (PK natural).
+            description: Nombre científico de la especie.
             data_type: varchar
             tests:
               - unique
               - not_null
+
           - name: nombre_comun_es
-            description: Nombre común en español. Puede tener espacios extra o mayúsculas.
+            description: Nombre común en español.
             data_type: varchar
             tests:
               - not_null
+
           - name: nombre_comun_en
-            description: Nombre común en inglés. 8.5% null.
+            description: Nombre común en inglés.
             data_type: varchar
+
           - name: clase
-            description: Clase taxonómica (Mammalia, Aves).
+            description: Clase taxonómica.
             data_type: varchar
             tests:
               - not_null
               - accepted_values:
-                      arguments:
-                        values: ['Mammalia', 'Aves']
-          - name: orden
-            description: Orden taxonómico. Puede contener typos (Carnívora vs Carnivora).
-            data_type: varchar
-            tests:
-              - not_null
+                  arguments:
+                    values: ['Mammalia', 'Aves']
+
           - name: familia
             description: Familia taxonómica.
             data_type: varchar
             tests:
               - not_null
-          - name: genero
-            description: Género taxonómico.
-            data_type: varchar
-          - name: especie
-            description: Epíteto específico.
-            data_type: varchar
+
           - name: estado_iucn
-            description: >
-              Estado de conservación IUCN. Formatos mixtos (LC/lc/L.C.)
-              — se normaliza con UPPER(TRIM()) en staging.
+            description: Estado de conservación IUCN.
             data_type: varchar
             tests:
               - not_null
+
           - name: estado_espana
-            description: >
-              Estado LESRPE español. 4.5% null (especies no evaluadas)
-              — se imputa 'NE' en staging.
+            description: Estado de conservación en España.
             data_type: varchar
+
           - name: endemismo
-            description: >
-              TRUE si endémica de la Península Ibérica.
-              Viene como string 'true'/'false' — se castea a boolean en staging.
+            description: TRUE si la especie es endémica.
             data_type: varchar
             tests:
               - not_null
+
           - name: cites_apendice
-            description: >
-              Apéndice CITES (I/II/III/–). Contiene nulls, vacíos y 'N/A'
-              — se normaliza a '–' en staging.
+            description: Apéndice CITES.
             data_type: varchar
-          - name: es_migratoria
-            description: >
-              TRUE si la especie migra estacionalmente.
-              Viene como string 'true'/'false' — se castea a boolean en staging.
-            data_type: varchar
-            tests:
-              - not_null
+
           - name: tipo_migracion
-            description: Tipo de migración (Estival/Invernante/Residente/Transeúnte).
+            description: Tipo de migración de la especie.
             data_type: varchar
-          - name: descripcion_txt
-            description: Descripción de la especie. 4.5% null — aceptable.
-            data_type: text
-          - name: fuente_taxonomica
-            description: Organismo fuente de la clasificación (IUCN 2023...).
-            data_type: varchar
+
           - name: amenaza
-            description: >
-              Amenazas activas separadas por "|" (máx. 3 por especie).
-              55% null en especies sin presión identificada — correcto.
-              Se parsea con split en staging para generar la tabla amenaza.
+            description: Amenazas activas separadas por "|".
             data_type: varchar
 
       - name: censos
         description: >
-          Censos oficiales de población estimada para 51 especies en 45 provincias.
-          Serie temporal 2018-2023. Fuentes: MITECO, SEO/BirdLife (SACRE, IWC),
-          FEDENCA (IKA) y Junta de Andalucía.
-          Granularidad: una fila por (especie, provincia, año).
+          Censos oficiales de población estimada.
+          Granularidad: una fila por especie, provincia y año.
         columns:
           - name: especie_nombre_cientifico
-            description: Nombre científico. FK natural a catalogo. Puede tener espacios extra.
+            description: Nombre científico de la especie.
             data_type: varchar
             tests:
               - not_null
+
           - name: anio_censo
-            description: >
-              Año del censo. Puede venir como float (2018.0) por export Excel
-              — se castea a int en staging.
+            description: Año del censo.
             data_type: varchar
             tests:
               - not_null
+
           - name: provincia
-            description: Provincia o región del censo. Puede tener espacios extra.
+            description: Provincia del censo.
             data_type: varchar
             tests:
               - not_null
+
           - name: ccaa
-            description: >
-              Comunidad autónoma. Puede tener variantes de tildes
-              (Andalucía/Andalucia) — se normaliza en staging.
+            description: Comunidad autónoma del censo.
             data_type: varchar
             tests:
               - not_null
+
           - name: n_individuos_estimados
-            description: >
-              Individuos estimados. Valores 0 o -1 son errores de exportación
-              — se convierten a NULL en staging.
+            description: Individuos estimados.
             data_type: float
-            tests:
-              - not_null
+
           - name: n_parejas_reproductoras
-            description: >
-              Parejas reproductoras. 100% null en mamíferos (no aplica).
-              Se añade columna aplica_parejas en staging derivada de la clase.
+            description: Parejas reproductoras.
             data_type: float
-          - name: metodo_censo
-            description: Metodología usada. Puede estar en minúsculas — INITCAP en staging.
-            data_type: varchar
-            tests:
-              - not_null
+
           - name: entidad_responsable
-            description: >
-              Entidad que realizó el censo. Variantes de nombre
-              (SEO/BirdLife vs SEO / BirdLife) — se normaliza en staging.
+            description: Entidad responsable del censo.
             data_type: varchar
             tests:
               - not_null
-          - name: fuente_doc
-            description: Documento fuente del censo. 1.5% null — aceptable.
-            data_type: varchar
+
