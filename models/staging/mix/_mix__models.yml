@@ -261,11 +261,7 @@ models:
         tests:
           - unique
           - not_null
-      - name: id_area_natural
-        data_type: number
-        tests:
-          - unique
-          - not_null
+          
       - name: nombre
         data_type: varchar
         tests:

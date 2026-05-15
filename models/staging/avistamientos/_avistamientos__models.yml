@@ -94,7 +94,7 @@ models:
 
     columns:
 
-      - name: id_area_natural
+      - name: id_area_protegida
         description: ID natural del área protegida.
         data_type: number
         tests:

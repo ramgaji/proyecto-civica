@@ -38,7 +38,7 @@ cleaned as (
     select
 
         -- ── PK NATURAL ──────────────────────────────────────────────────────
-          id_area                                              as id_area_natural
+          id_area                                              as id_area_protegida
 
         -- ── IDENTIFICACIÓN ──────────────────────────────────────────────────
         , trim(nombre)                                         as nombre

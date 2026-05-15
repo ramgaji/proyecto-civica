@@ -56,10 +56,9 @@ entidad_gestora as (
 )
 
 select
-      {{ dbt_utils.generate_surrogate_key(['areas.id_area_natural']) }}
+      {{ dbt_utils.generate_surrogate_key(['areas.id_area_protegida']) }}
                                                             as id_area_protegida
 
-    , areas.id_area_natural
     , areas.nombre
     , areas.es_lic
     , areas.es_zepa
