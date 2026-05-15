@@ -1,30 +1,10 @@
 -- ===========================================================================
 -- stg_mix__avistamiento.sql
 -- ===========================================================================
--- CAPA:   Staging Mix (Silver normalizado)
--- FUENTE: ref('stg_avistamientos__observaciones')
---         ref('stg_mix__especie')
---         ref('stg_mix__localizacion')
--- MATERIALIZACIÓN: incremental (merge)
---
--- DIAGRAMA:
---   avistamiento {
---     id_avistamiento
---     id_avistamiento_natural
---     fecha
---     hora_utc
---     id_especie
---     id_localizacion
---     verificado
---     fuente
---     precision_gps_m
---     es_catalogada
---   }
--- ===========================================================================
 
 {{ config(
     materialized='incremental',
-    unique_key='id_avistamiento_natural',
+    unique_key='id_avistamiento',
     incremental_strategy='merge',
     on_schema_change='fail'
 ) }}
@@ -56,28 +36,23 @@ localizacion as (
 
     select
           id_localizacion
-        , id_avistamiento_natural
+        , id_avistamiento
     from {{ ref('stg_mix__localizacion') }}
 
 )
 
 select
-      {{ dbt_utils.generate_surrogate_key(['obs.id_avistamiento_natural', 'obs.fuente']) }}
-                                                        as id_avistamiento
-
-    , obs.id_avistamiento_natural
+      obs.id_avistamiento
     , obs.fecha
     , obs.hora_utc
     , esp.id_especie
     , loc.id_localizacion
     , obs.verificado
-    , obs.fuente
     , obs.precision_gps_m
-
     , case
         when esp.id_especie is null then false
         else true
-      end                                               as es_catalogada
+      end as es_catalogada
 
 from obs
 
@@ -85,4 +60,4 @@ left join especie esp
        on trim(lower(obs.nombre_cientifico)) = trim(lower(esp.nombre_cientifico))
 
 left join localizacion loc
-       on obs.id_avistamiento_natural = loc.id_avistamiento_natural
+       on obs.id_avistamiento = loc.id_avistamiento

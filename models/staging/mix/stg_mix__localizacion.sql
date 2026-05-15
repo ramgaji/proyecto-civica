@@ -1,30 +1,11 @@
 -- ===========================================================================
 -- stg_mix__localizacion.sql
 -- ===========================================================================
--- CAPA:   Staging Mix (Silver normalizado)
--- FUENTE: ref('stg_avistamientos__observaciones')
---         ref('stg_mix__area_protegida')
---         ref('stg_mix__provincia')
--- MATERIALIZACIÓN: view
---
--- DIAGRAMA:
---   localizacion {
---     id_localizacion
---     id_avistamiento_natural
---     latitud
---     longitud
---     id_provincia
---     id_area_protegida
---     es_lic
---     es_zepa
---     es_parque_nacional
---   }
--- ===========================================================================
 
 with obs as (
 
     select
-          id_avistamiento_natural
+          id_avistamiento
         , latitud
         , longitud
         , provincia_raw
@@ -61,7 +42,7 @@ provincia as (
 obs_con_area as (
 
     select
-          obs.id_avistamiento_natural
+          obs.id_avistamiento
         , obs.latitud
         , obs.longitud
         , obs.provincia_raw
@@ -73,24 +54,22 @@ obs_con_area as (
     from obs
 
     left join areas
-           on obs.latitud  between areas.lat_min and areas.lat_max
+           on obs.latitud between areas.lat_min and areas.lat_max
           and obs.longitud between areas.lon_min and areas.lon_max
 
     qualify row_number() over (
-        partition by obs.id_avistamiento_natural
+        partition by obs.id_avistamiento
         order by
             areas.es_parque_nacional desc nulls last,
-            areas.es_zepa            desc nulls last,
-            areas.es_lic             desc nulls last
+            areas.es_zepa desc nulls last,
+            areas.es_lic desc nulls last
     ) = 1
 
 )
 
 select
-      {{ dbt_utils.generate_surrogate_key(['oca.id_avistamiento_natural']) }}
-                                                        as id_localizacion
-
-    , oca.id_avistamiento_natural
+      {{ dbt_utils.generate_surrogate_key(['oca.id_avistamiento']) }} as id_localizacion
+    , oca.id_avistamiento
     , oca.latitud
     , oca.longitud
     , prov.id_provincia

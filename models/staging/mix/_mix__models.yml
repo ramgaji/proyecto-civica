@@ -327,7 +327,7 @@ models:
         tests:
           - unique
           - not_null
-      - name: id_avistamiento_natural
+      - name: id_avistamiento
         data_type: number
         tests:
           - unique
@@ -383,11 +383,7 @@ models:
         tests:
           - unique
           - not_null
-      - name: id_avistamiento_natural
-        data_type: number
-        tests:
-          - unique
-          - not_null
+          
       - name: fecha
         data_type: date
         tests:
@@ -412,10 +408,6 @@ models:
                 field: id_localizacion
       - name: verificado
         data_type: boolean
-        tests:
-          - not_null
-      - name: fuente
-        data_type: varchar
         tests:
           - not_null
       - name: precision_gps_m

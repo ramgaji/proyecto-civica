@@ -15,7 +15,7 @@ models:
 
     columns:
 
-      - name: id_avistamiento_natural
+      - name: id_avistamiento
         description: ID natural del avistamiento en iNaturalist.
         data_type: number
         tests:
@@ -81,11 +81,6 @@ models:
         tests:
           - not_null
 
-      - name: fuente
-        description: Fuente del avistamiento.
-        data_type: varchar
-        tests:
-          - not_null
 
   # ==========================================================================
   # stg_avistamientos__areas

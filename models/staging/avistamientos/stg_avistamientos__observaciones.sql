@@ -31,7 +31,7 @@ with src as (
 cleaned as (
 
     select
-          id                                                   as id_avistamiento_natural
+          id                                                   as id_avistamiento
 
         -- ── FECHA ───────────────────────────────────────────────────────────
         , coalesce(
@@ -76,7 +76,6 @@ cleaned as (
             regexp_substr(positional_accuracy::varchar, '[0-9]+(\.[0-9]+)?')
           )                                                    as precision_gps_m
 
-        , 'iNaturalist'                                        as fuente
 
     from src
 
