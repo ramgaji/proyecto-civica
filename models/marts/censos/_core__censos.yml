@@ -1,0 +1,50 @@
+version: 2
+
+models:
+
+  - name: fct_censo_anual
+    description: >
+      Tabla de hechos anual de censos poblacionales.
+      Calcula variaciones temporales y tendencias mediante funciones window.
+    columns:
+
+      - name: id_censo
+        tests:
+          - unique
+          - not_null
+
+      - name: id_especie
+        tests:
+          - relationships:
+              arguments:
+                to: ref('dim_especie')
+                field: id_especie
+              config:
+                severity: warn
+
+      - name: id_provincia
+        tests:
+          - relationships:
+              arguments:
+                to: ref('dim_provincia')
+                field: id_provincia
+              config:
+                severity: warn
+
+      - name: anio
+        tests:
+          - not_null
+
+      - name: n_individuos_estimados
+        tests:
+          - positive_values
+
+      - name: tendencia
+        tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - 'alza'
+                  - 'baja'
+                  - 'estable'
+                  - 'sin_referencia'

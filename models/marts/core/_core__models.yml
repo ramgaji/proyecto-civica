@@ -1,0 +1,172 @@
+version: 2
+
+models:
+
+  - name: dim_area_protegida
+    description: >
+      Dimensión de áreas protegidas desnormalizada para BI.
+      Incluye provincia, CCAA, entidad gestora y bounding box para el join espacial.
+    columns:
+      - name: id_area_protegida
+        tests:
+          - unique
+          - not_null
+
+      - name: nombre
+        tests:
+          - not_null
+
+      - name: es_lic
+        tests:
+          - not_null
+
+      - name: es_zepa
+        tests:
+          - not_null
+
+      - name: es_parque_nacional
+        tests:
+          - not_null
+
+      - name: nombre_provincia
+
+      - name: ccaa
+
+      - name: entidad_gestora
+
+      - name: codigo_red_natura
+
+      - name: lat_min
+        tests:
+          - not_null
+
+      - name: lat_max
+        tests:
+          - not_null
+
+      - name: lon_min
+        tests:
+          - not_null
+
+      - name: lon_max
+        tests:
+          - not_null
+
+
+  - name: dim_ccaa
+    description: Dimensión de comunidades autónomas.
+    columns:
+      - name: id_ccaa
+        tests:
+          - unique
+          - not_null
+
+      - name: nombre
+        tests:
+          - unique
+          - not_null
+
+
+  - name: dim_especie
+    description: >
+      Dimensión de especies desnormalizada desde el snapshot SCD2 vigente.
+    columns:
+      - name: id_especie
+        tests:
+          - unique
+          - not_null
+
+      - name: nombre_cientifico
+        tests:
+          - unique
+          - not_null
+
+      - name: nombre_comun_es
+
+      - name: nombre_comun_en
+
+      - name: nombre_familia
+
+      - name: nombre_clase
+
+      - name: estado_iucn
+
+      - name: estado_espana
+
+      - name: endemismo
+        tests:
+          - not_null
+
+      - name: es_migratoria
+        tests:
+          - not_null
+
+      - name: tipo_migracion
+
+      - name: cites_apendice
+
+
+  - name: dim_fecha
+    description: >
+      Dimensión temporal generada desde los avistamientos Silver.
+      Incluye año, mes, estación, día de semana, hora local aproximada
+      y franja día/tarde/noche.
+    columns:
+      - name: fecha
+        tests:
+          - unique
+          - not_null
+
+      - name: anio
+        tests:
+          - not_null
+
+      - name: mes
+        tests:
+          - not_null
+
+      - name: estacion
+        tests:
+          - not_null
+
+      - name: dia_semana
+        tests:
+          - not_null
+
+      - name: nombre_mes
+        tests:
+          - not_null
+
+      - name: hora
+
+      - name: dia_tarde_noche
+        tests:
+          - accepted_values:
+              arguments:
+                values: ['Dia', 'Tarde', 'Noche']
+
+
+  - name: dim_provincia
+    description: Dimensión de provincias españolas con CCAA desnormalizada.
+    columns:
+      - name: id_provincia
+        tests:
+          - unique
+          - not_null
+
+      - name: nombre_provincia
+        tests:
+          - unique
+          - not_null
+
+      - name: id_ccaa
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_ccaa')
+                field: id_ccaa
+
+      - name: ccaa
+        tests:
+          - not_null

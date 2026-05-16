@@ -1,0 +1,74 @@
+version: 2
+
+models:
+
+  - name: fct_avistamiento
+    description: >
+      Tabla de hechos principal de avistamientos.
+      Granularidad: una fila por avistamiento.
+      El join espacial bounding box se calcula en Gold para determinar
+      si el avistamiento ocurrió dentro de un área protegida.
+    columns:
+
+      - name: id_avistamiento
+        tests:
+          - unique
+          - not_null
+
+      - name: id_especie
+        tests:
+          - relationships:
+              arguments:
+                to: ref('dim_especie')
+                field: id_especie
+              config:
+                severity: warn
+
+      - name: id_provincia
+        tests:
+          - relationships:
+              arguments:
+                to: ref('dim_provincia')
+                field: id_provincia
+              config:
+                severity: warn
+
+      - name: id_area_protegida
+        tests:
+          - relationships:
+              arguments:
+                to: ref('dim_area_protegida')
+                field: id_area_protegida
+              config:
+                severity: warn
+
+      - name: fecha
+        tests:
+          - relationships:
+              arguments:
+                to: ref('dim_fecha')
+                field: fecha
+
+      - name: verificado
+        tests:
+          - not_null
+
+      - name: es_catalogada
+        tests:
+          - not_null
+
+      - name: es_lic
+        tests:
+          - not_null
+
+      - name: es_zepa
+        tests:
+          - not_null
+
+      - name: es_parque_nacional
+        tests:
+          - not_null
+
+      - name: dentro_area_protegida
+        tests:
+          - not_null

@@ -1,14 +1,6 @@
 # ============================================================================
 # dbt_project.yml — Proyecto Civica (Fauna España)
 # ============================================================================
-# Pipeline de datos de biodiversidad y conservación de fauna en España.
-# Fuentes: iNaturalist (avistamientos), MITECO/SEO (censos), Red Natura 2000.
-#
-# Arquitectura Medallion:
-#   BRONZE → raw ingestion (CSV cargados a Snowflake)
-#   SILVER → staging + normalización (vistas dbt)
-#   GOLD   → marts dimensionales para análisis y BI
-# ============================================================================
 
 name: 'proyecto-civica'
 version: '1.0.0'
@@ -33,20 +25,14 @@ clean-targets:
   - "dbt_packages"
 
 # ----------------------------------------------------------------------------
-# Hooks a nivel de proyecto
-# ----------------------------------------------------------------------------
-#on-run-start:
-#  - "ALTER WAREHOUSE WH_CURSO_DATA_ENGINEERING RESUME IF SUSPENDED;"
-
-# ----------------------------------------------------------------------------
 # Variables de proyecto
 # ----------------------------------------------------------------------------
 vars:
-  min_fecha_avistamiento: '2020-01-01'   # Fecha mínima de avistamientos
-  min_anio_censo: 2018                   # Año mínimo de censos
+  min_fecha_avistamiento: '2020-01-01'
+  min_anio_censo: 2018
 
 # ============================================================================
-# CONFIGURACIÓN DE MODELOS
+# MODELOS
 # ============================================================================
 models:
   +transient: false
@@ -55,43 +41,45 @@ models:
 
     # ------------------------------------------------------------------------
     # STAGING — Capa Silver
-    # Materializados como vista. Apuntan a SILVER_DB del entorno actual.
     # ------------------------------------------------------------------------
     staging:
       +materialized: view
       +database: "{{ env_var('DBT_ENVIRONMENTS', 'FAIL') }}_SILVER_DB"
 
-      # Limpieza 1:1 del raw de AVISTAMIENTOS (AREAS + OBSERVACIONES)
       avistamientos:
         +schema: avistamientos
 
-      # Limpieza 1:1 del raw de ESPECIES (CATALOGO + CENSOS)
       especies:
         +schema: especies
 
-      # Tablas Silver normalizadas que combinan varias fuentes
       mix:
         +schema: mix
 
     # ------------------------------------------------------------------------
     # MARTS — Capa Gold
-    # Materializados como tabla. Apuntan a GOLD_DB del entorno actual.
     # ------------------------------------------------------------------------
     marts:
       +materialized: table
       +database: "{{ env_var('DBT_ENVIRONMENTS', 'FAIL') }}_GOLD_DB"
 
+      # Dimensiones compartidas por todos los marts
       core:
         +schema: core
 
-        # Modelos intermedios: vistas en schema separado, no expuestos al usuario
-        intermediate:
-          +materialized: view
-          +schema: intermediate
+      # Área 1 — Alertas y seguimiento en campo
+      avistamientos:
+        +schema: avistamientos
+
+      # Área 2 — Censos y predicción de poblaciones
+      censos:
+        +schema: censos
+
+      # Área 3 — Diversidad ecológica por CCAA
+      diversidad:
+        +schema: diversidad
 
 # ============================================================================
-# SEEDS — Tablas de referencia pequeñas
-# Van a BRONZE_DB como tablas estáticas de lookup.
+# SEEDS — Solo España
 # ============================================================================
 seeds:
   +schema: seed_data
@@ -103,8 +91,6 @@ seeds:
         id_provincia: INTEGER
         nombre:       VARCHAR(100)
         ccaa:         VARCHAR(100)
-        codigo_ine:   VARCHAR(2)
-        pais:         VARCHAR(50)
 
     estado_conservacion:
       +column_types:
@@ -112,7 +98,6 @@ seeds:
         codigo:       VARCHAR(10)
         descripcion:  VARCHAR(200)
         nivel_riesgo: INTEGER
-        fuente:       VARCHAR(20)
 
     tipo_amenaza:
       +column_types:
@@ -122,7 +107,6 @@ seeds:
 
 # ============================================================================
 # SNAPSHOTS — SCD Tipo 2
-# Viven en SILVER_DB, schema snapshots, como tablas no-transient.
 # ============================================================================
 snapshots:
   +transient: false
