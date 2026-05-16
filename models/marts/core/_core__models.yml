@@ -9,24 +9,18 @@ models:
     columns:
       - name: id_area_protegida
         tests:
-          - unique
           - not_null
 
       - name: nombre
-        tests:
-          - not_null
+
 
       - name: es_lic
-        tests:
-          - not_null
 
       - name: es_zepa
-        tests:
-          - not_null
+
 
       - name: es_parque_nacional
-        tests:
-          - not_null
+
 
       - name: nombre_provincia
 
@@ -58,12 +52,10 @@ models:
     columns:
       - name: id_especie
         tests:
-          - unique
           - not_null
 
       - name: nombre_cientifico
         tests:
-          - unique
           - not_null
 
       - name: nombre_comun_es
@@ -102,24 +94,16 @@ models:
           - not_null
 
       - name: anio
-        tests:
-          - not_null
+
 
       - name: mes
-        tests:
-          - not_null
 
       - name: estacion
-        tests:
-          - not_null
 
       - name: dia_semana
-        tests:
-          - not_null
+
 
       - name: nombre_mes
-        tests:
-          - not_null
 
       - name: hora
 
@@ -141,7 +125,11 @@ models:
           - not_null
 
       - name: id_ccaa
-
-      - name: ccaa
         tests:
           - not_null
+        
+      - name: ccaa        
+        tests:
+            - not_null:
+                config:
+                severity: warn

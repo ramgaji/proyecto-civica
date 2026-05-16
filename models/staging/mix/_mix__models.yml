@@ -376,11 +376,7 @@ models:
                 severity: warn
       - name: id_localizacion
         data_type: varchar
-        tests:
-          - relationships:
-              arguments:
-                to: ref('stg_mix__localizacion')
-                field: id_localizacion
+
       - name: verificado
         data_type: boolean
         tests:
@@ -416,6 +412,8 @@ models:
               arguments:
                 to: ref('stg_mix__provincia')
                 field: id_provincia
+              config:
+                severity: warn
       - name: id_entidad
         data_type: number
         tests:

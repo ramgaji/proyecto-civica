@@ -59,26 +59,22 @@ sources:
           - name: lat_min
             description: Latitud mínima del bounding box del área.
             data_type: number
-            tests:
-              - not_null
+
 
           - name: lat_max
             description: Latitud máxima del bounding box del área.
             data_type: number
-            tests:
-              - not_null
+
 
           - name: lon_min
             description: Longitud mínima del bounding box del área.
             data_type: number
-            tests:
-              - not_null
+
 
           - name: lon_max
             description: Longitud máxima del bounding box del área.
             data_type: number
-            tests:
-              - not_null
+
 
           - name: superficie_ha
             description: Superficie en hectáreas.

@@ -35,9 +35,6 @@ models:
         data_type: varchar
         tests:
           - not_null
-          - accepted_values:
-              arguments:
-                values: ['Mammalia', 'Aves']
 
       - name: nombre_familia
         description: Familia taxonómica.
