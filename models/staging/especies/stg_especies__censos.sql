@@ -68,8 +68,11 @@ cleaned as (
 
     from src
 
+    -- El límite inferior se controla con la variable min_anio_censo.
+    -- El límite superior usa year(current_date()) para no descartar datos
+    -- silenciosamente cuando el proyecto supere el año hardcodeado anterior.
     where anio_censo is not null
-      and anio_censo::integer between {{ var('min_anio_censo') }} and 2030
+      and anio_censo::integer between {{ var('min_anio_censo') }} and year(current_date())
 
 )
 

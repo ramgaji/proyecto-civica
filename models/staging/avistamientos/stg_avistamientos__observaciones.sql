@@ -79,9 +79,13 @@ cleaned as (
 
     from src
 
+    -- DEDUP: si iNaturalist entrega el mismo id varias veces nos quedamos
+    -- con el registro más reciente según time_observed_at. Si ese campo
+    -- también es igual (duplicados idénticos), el orden es no determinista
+    -- pero el resultado es equivalente.
     qualify row_number() over (
         partition by id
-        order by id
+        order by time_observed_at desc nulls last
     ) = 1
 
 )

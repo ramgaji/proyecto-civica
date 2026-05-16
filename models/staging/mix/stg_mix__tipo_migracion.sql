@@ -10,6 +10,12 @@
 --     id_tipo_migracion
 --     nombre
 --   }
+--
+-- DECISIÓN — surrogate key en lugar de row_number():
+--   ROW_NUMBER() sobre un catálogo derivado de texto es inestable:
+--   si el catálogo de especies incorpora un nuevo tipo de migración,
+--   todos los tipos posteriores alfabéticamente cambian de ID.
+--   El surrogate key produce un MD5 estable por nombre.
 -- ===========================================================================
 
 with src as (
@@ -22,7 +28,7 @@ with src as (
 )
 
 select
-      row_number() over (order by tipo_migracion) as id_tipo_migracion
-    , tipo_migracion                              as nombre
+      {{ dbt_utils.generate_surrogate_key(['tipo_migracion']) }} as id_tipo_migracion
+    , tipo_migracion                                             as nombre
 
 from src

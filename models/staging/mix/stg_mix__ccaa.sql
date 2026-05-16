@@ -14,6 +14,12 @@
 -- OBJETIVO:
 --   Generar catálogo único de comunidades autónomas españolas
 --   a partir del seed provincia_ccaa.
+--
+-- DECISIÓN — surrogate key en lugar de row_number():
+--   ROW_NUMBER() ORDER BY nombre es inestable: si se añade una nueva CCAA
+--   (p.ej. una región extranjera de frontera) todas las CCAA posteriores
+--   en orden alfabético cambian de ID. El surrogate key garantiza que
+--   el ID de cada CCAA es siempre el mismo MD5 de su nombre.
 -- ===========================================================================
 
 with src as (
@@ -26,7 +32,7 @@ with src as (
 )
 
 select
-      row_number() over (order by nombre) as id_ccaa
+      {{ dbt_utils.generate_surrogate_key(['nombre']) }} as id_ccaa
     , nombre
 
 from src

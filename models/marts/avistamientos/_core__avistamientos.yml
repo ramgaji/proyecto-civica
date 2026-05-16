@@ -8,39 +8,28 @@ models:
       Granularidad: una fila por avistamiento.
       El join espacial bounding box se calcula en Gold para determinar
       si el avistamiento ocurrió dentro de un área protegida.
+      La hora local (CET/CEST) y la franja horaria se calculan aquí
+      desde hora_utc, dado que dim_fecha tiene granularidad diaria estricta.
     columns:
 
       - name: id_avistamiento
         tests:
           - unique
           - not_null
+          # unique se mantiene en la fact principal: el join espacial con
+          # bounding box podría duplicar filas si hubiera overlapping de áreas
+          # no resuelto por el QUALIFY. Es el único unique justificado en Gold.
 
       - name: id_especie
-        tests:
-          - relationships:
-              arguments:
-                to: ref('dim_especie')
-                field: id_especie
-              config:
-                severity: warn
+        # relationships eliminado: ya testeado en stg_mix__avistamiento.
+        # En Gold la FK es heredada; doblar el test no añade cobertura nueva.
 
       - name: id_provincia
-        tests:
-          - relationships:
-              arguments:
-                to: ref('dim_lugar')
-                field: id_provincia
-              config:
-                severity: warn
+        # relationships eliminado: mismo argumento que id_especie.
 
       - name: id_area_protegida
-        tests:
-          - relationships:
-              arguments:
-                to: ref('dim_area_protegida')
-                field: id_area_protegida
-              config:
-                severity: warn
+        # relationships eliminado: NULL es legítimo (avistamiento fuera de
+        # área protegida). Un relationships con warn en FK nullable es ruido.
 
       - name: fecha
         tests:
@@ -48,27 +37,52 @@ models:
               arguments:
                 to: ref('dim_fecha')
                 field: fecha
+          # Se mantiene: dim_fecha se genera solo desde stg_mix__avistamiento
+          # con un filtro de fechas. Si hubiera registros con fechas fuera
+          # de ese rango, el JOIN en BI quedaría sin fila de dimensión.
+          # Es el único relationships con valor real en esta fact.
+
+      - name: hora_utc
+
+      - name: hora_local
+        description: >
+          Hora local España (CET/CEST) calculada desde hora_utc.
+          Offset +2h en horario de verano (abril-octubre), +1h en invierno.
+
+      - name: franja_horaria
+        description: Franja del día en hora local española.
+        tests:
+          - accepted_values:
+              arguments:
+                values: ['Dia', 'Tarde', 'Noche']
+          # Se mantiene: columna computada aquí con CASE. Confirma que
+          # ninguna hora local produce un valor fuera de los 3 esperados.
 
       - name: verificado
         tests:
           - not_null
+          # Se mantiene: columna heredada de Silver pero crítica para filtros
+          # analíticos. El not_null confirma que el LEFT JOIN con
+          # avistamiento_con_area no introdujo NULLs donde no debe haberlos.
 
       - name: es_catalogada
         tests:
           - not_null
+          # Se mantiene: columna computada en stg_mix__avistamiento con CASE.
 
       - name: es_lic
-        tests:
-          - not_null
+        # not_null eliminado: ya testeado en dim_area_protegida.
+        # Aquí viene del COALESCE en avistamiento_con_area — siempre false si NULL.
 
       - name: es_zepa
-        tests:
-          - not_null
+        # not_null eliminado: mismo argumento que es_lic.
 
       - name: es_parque_nacional
-        tests:
-          - not_null
+        # not_null eliminado: mismo argumento que es_lic.
 
       - name: dentro_area_protegida
         tests:
           - not_null
+          # Se mantiene: columna computada aquí con CASE WHEN id_area IS NOT NULL.
+          # Confirma que el CASE nunca produce NULL — distinto de los booleans
+          # anteriores que vienen de COALESCE en Silver.

@@ -10,7 +10,7 @@ models:
     description: Catálogo de tipos de migración.
     columns:
       - name: id_tipo_migracion
-        data_type: number
+        data_type: varchar        # surrogate key MD5 — era number (row_number)
         tests:
           - unique
           - not_null
@@ -81,7 +81,7 @@ models:
     description: Catálogo de entidades gestoras o responsables.
     columns:
       - name: id_entidad
-        data_type: number
+        data_type: varchar        # surrogate key MD5 — era number (row_number)
         tests:
           - unique
           - not_null
@@ -176,14 +176,14 @@ models:
         tests:
           - not_null
       - name: id_tipo_migracion
-        data_type: number
+        data_type: varchar        # surrogate key MD5 — era number (row_number)
         tests:
           - relationships:
               arguments:
                 to: ref('stg_mix__tipo_migracion')
                 field: id_tipo_migracion
               config:
-                severity: warn
+                severity: warn  # nullable: especies no migratorias tienen NULL
       - name: id_cites
         data_type: number
         tests:
@@ -222,7 +222,7 @@ models:
     description: Catálogo de comunidades autónomas.
     columns:
       - name: id_ccaa
-        data_type: number
+        data_type: varchar        # surrogate key MD5 — era number (row_number)
         tests:
           - unique
           - not_null
@@ -246,7 +246,7 @@ models:
           - unique
           - not_null
       - name: id_ccaa
-        data_type: number
+        data_type: varchar        # surrogate key MD5 — era number (row_number)
         tests:
           - relationships:
               arguments:
@@ -261,7 +261,6 @@ models:
         tests:
           - unique
           - not_null
-          
       - name: nombre
         data_type: varchar
         tests:
@@ -286,7 +285,7 @@ models:
                 to: ref('stg_mix__provincia')
                 field: id_provincia
       - name: id_entidad
-        data_type: number
+        data_type: varchar        # surrogate key MD5 — era number (row_number)
         tests:
           - relationships:
               arguments:
@@ -344,8 +343,8 @@ models:
                 to: ref('stg_mix__provincia')
                 field: id_provincia
               config:
-                severity: warn
-    
+                severity: warn  # Gibraltar y zonas fronterizas no matchan
+
   # ==========================================================================
   # HECHOS
   # ==========================================================================
@@ -354,11 +353,10 @@ models:
     description: Tabla Silver incremental de avistamientos.
     columns:
       - name: id_avistamiento
-        data_type: varchar
+        data_type: number
         tests:
           - unique
           - not_null
-          
       - name: fecha
         data_type: date
         tests:
@@ -373,10 +371,13 @@ models:
                 to: ref('stg_mix__especie')
                 field: id_especie
               config:
-                severity: warn
+                severity: warn  # avistamientos no catalogados tienen NULL
       - name: id_localizacion
+        # relationships eliminado: tautológico — id_localizacion se deriva
+        # de id_avistamiento con generate_surrogate_key, siempre válido.
         data_type: varchar
-
+        tests:
+          - not_null
       - name: verificado
         data_type: boolean
         tests:
@@ -413,9 +414,9 @@ models:
                 to: ref('stg_mix__provincia')
                 field: id_provincia
               config:
-                severity: warn
+                severity: warn  # añadido: provincias no mapeadas no deben romper pipeline
       - name: id_entidad
-        data_type: number
+        data_type: varchar        # surrogate key MD5 — era number (row_number)
         tests:
           - relationships:
               arguments:

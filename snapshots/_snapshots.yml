@@ -145,8 +145,9 @@ snapshots:
         data_type: number
         tests:
           - relationships:
-              to: ref('stg_mix__estado_conservacion')
-              field: id_estado
+              arguments:
+                to: ref('stg_mix__estado_conservacion')
+                field: id_estado
               config:
                 severity: warn
 
@@ -157,8 +158,9 @@ snapshots:
         data_type: number
         tests:
           - relationships:
-              to: ref('stg_mix__estado_conservacion')
-              field: id_estado
+              arguments:
+                to: ref('stg_mix__estado_conservacion')
+                field: id_estado
               config:
                 severity: warn
 
@@ -174,7 +176,7 @@ snapshots:
         description: >
           FK a stg_mix__tipo_migracion. Forma parte de check_cols.
           Puede ser null para especies no migratorias: no se testea not_null.
-        data_type: number
+        data_type: varchar
 
       - name: id_cites
         description: >
@@ -182,7 +184,8 @@ snapshots:
         data_type: number
         tests:
           - relationships:
-              to: ref('stg_mix__cites_apendice')
-              field: id_cites
+              arguments:
+                to: ref('stg_mix__cites_apendice')
+                field: id_cites
               config:
                 severity: warn

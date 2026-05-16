@@ -1,6 +1,25 @@
 -- ===========================================================================
 -- fct_avistamiento.sql
 -- ===========================================================================
+-- CAPA:   Gold — tabla de hechos principal
+-- FUENTE: ref('stg_mix__avistamiento')
+--         ref('stg_mix__localizacion')
+--         ref('dim_area_protegida')
+-- MATERIALIZACIÓN: table
+--
+-- GRANULARIDAD: una fila por avistamiento.
+--
+-- NOTA — hora_local y franja horaria:
+--   Tras corregir dim_fecha (granularidad estricta por fecha), la hora
+--   y la franja dia/tarde/noche se calculan aquí directamente desde
+--   hora_utc aplicando el offset horario de España.
+--   Esto mantiene el dato disponible para análisis sin romper la dim.
+--
+-- NOTA — join espacial bounding box:
+--   El join loc × area es no-equi (BETWEEN), por lo que Snowflake aplica
+--   nested-loop. QUALIFY resuelve solapamientos de áreas priorizando
+--   la figura de mayor protección: parque > zepa > lic.
+-- ===========================================================================
 
 with avi as (
 
@@ -38,15 +57,15 @@ avistamiento_con_area as (
     from loc
 
     left join area
-           on loc.latitud between area.lat_min and area.lat_max
+           on loc.latitud  between area.lat_min and area.lat_max
           and loc.longitud between area.lon_min and area.lon_max
 
     qualify row_number() over (
         partition by loc.id_avistamiento
         order by
             area.es_parque_nacional desc nulls last,
-            area.es_zepa desc nulls last,
-            area.es_lic desc nulls last
+            area.es_zepa            desc nulls last,
+            area.es_lic             desc nulls last
     ) = 1
 
 )
@@ -58,6 +77,31 @@ select
     , aca.id_area_protegida
     , avi.fecha
     , avi.hora_utc
+
+    -- Hora local España (CET/CEST) derivada desde hora_utc.
+    -- Offset +2h en horario de verano (abril-octubre), +1h en invierno.
+    -- Se calcula aquí porque dim_fecha tiene granularidad diaria estricta.
+    , case
+        when extract(month from avi.fecha) between 4 and 10
+            then mod(date_part('hour', avi.hora_utc) + 2, 24)
+        else
+            mod(date_part('hour', avi.hora_utc) + 1, 24)
+      end                                                  as hora_local
+
+    , case
+        when case
+               when extract(month from avi.fecha) between 4 and 10
+                   then mod(date_part('hour', avi.hora_utc) + 2, 24)
+               else mod(date_part('hour', avi.hora_utc) + 1, 24)
+             end between 7  and 14 then 'Dia'
+        when case
+               when extract(month from avi.fecha) between 4 and 10
+                   then mod(date_part('hour', avi.hora_utc) + 2, 24)
+               else mod(date_part('hour', avi.hora_utc) + 1, 24)
+             end between 15 and 20 then 'Tarde'
+        else 'Noche'
+      end                                                  as franja_horaria
+
     , aca.latitud
     , aca.longitud
     , avi.verificado
