@@ -62,8 +62,10 @@
     }}
 
     select
-          nombre_cientifico
+          id_especie
+        , nombre_cientifico
         , nombre_comun_es
+        , nombre_comun_en
         , id_familia
         , id_estado_iucn
         , id_estado_espana

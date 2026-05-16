@@ -1,0 +1,42 @@
+version: 2
+
+models:
+
+  - name: fct_diversidad_ccaa
+    description: >
+      Métricas anuales de biodiversidad por comunidad autónoma.
+      Calcula riqueza específica, avistamientos totales e índices de Shannon y Simpson.
+      Se calcula sobre fct_avistamiento usando solo especies catalogadas.
+
+    columns:
+
+      - name: id_ccaa
+        description: Identificador de la comunidad autónoma.
+        tests:
+          - not_null
+
+      - name: anio
+        description: Año del análisis.
+        tests:
+          - not_null
+
+      - name: n_especies
+        description: Número de especies distintas observadas en la CCAA y año.
+
+      - name: n_avistamientos_total
+        description: Número total de avistamientos catalogados en la CCAA y año.
+
+      - name: shannon_h
+        description: Índice de diversidad de Shannon.
+
+      - name: simpson_d
+        description: Índice de diversidad de Simpson.
+
+      - name: n_especies_cr
+        description: Número de especies en peligro crítico.
+
+      - name: n_especies_en
+        description: Número de especies en peligro.
+
+      - name: n_especies_vu
+        description: Número de especies vulnerables.

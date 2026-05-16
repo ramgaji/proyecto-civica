@@ -6,7 +6,7 @@ with snapshot as (
 
     select *
     from {{ ref('especie_snapshot') }}
-    where dbt_current_flag = 'Y'
+    where dbt_valid_to is null
 
 ),
 

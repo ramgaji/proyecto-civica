@@ -28,7 +28,7 @@ models:
         tests:
           - relationships:
               arguments:
-                to: ref('dim_provincia')
+                to: ref('dim_lugar')
                 field: id_provincia
               config:
                 severity: warn

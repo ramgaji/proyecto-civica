@@ -12,7 +12,7 @@ with base as (
 
     from {{ ref('fct_avistamiento') }} avi
 
-    inner join {{ ref('dim_provincia') }} prov
+    inner join {{ ref('dim_lugar') }} prov
             on avi.id_provincia = prov.id_provincia
 
     inner join {{ ref('dim_especie') }} esp

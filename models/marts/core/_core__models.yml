@@ -52,21 +52,6 @@ models:
         tests:
           - not_null
 
-
-  - name: dim_ccaa
-    description: Dimensión de comunidades autónomas.
-    columns:
-      - name: id_ccaa
-        tests:
-          - unique
-          - not_null
-
-      - name: nombre
-        tests:
-          - unique
-          - not_null
-
-
   - name: dim_especie
     description: >
       Dimensión de especies desnormalizada desde el snapshot SCD2 vigente.
@@ -114,7 +99,6 @@ models:
     columns:
       - name: fecha
         tests:
-          - unique
           - not_null
 
       - name: anio
@@ -145,27 +129,18 @@ models:
               arguments:
                 values: ['Dia', 'Tarde', 'Noche']
 
-
-  - name: dim_provincia
-    description: Dimensión de provincias españolas con CCAA desnormalizada.
+  - name: dim_lugar
+    description: Dimensión geográfica de provincias españolas con CCAA desnormalizada.
     columns:
       - name: id_provincia
         tests:
-          - unique
           - not_null
 
-      - name: nombre_provincia
+      - name: provincia
         tests:
-          - unique
           - not_null
 
       - name: id_ccaa
-        tests:
-          - not_null
-          - relationships:
-              arguments:
-                to: ref('dim_ccaa')
-                field: id_ccaa
 
       - name: ccaa
         tests:

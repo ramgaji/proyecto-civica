@@ -12,7 +12,7 @@ with censo as (
 provincia as (
 
     select *
-    from {{ ref('dim_provincia') }}
+    from {{ ref('dim_lugar') }}
 
 ),
 
