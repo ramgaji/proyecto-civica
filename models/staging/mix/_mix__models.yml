@@ -345,28 +345,7 @@ models:
                 field: id_provincia
               config:
                 severity: warn
-      - name: id_area_protegida
-        data_type: varchar
-        tests:
-          - relationships:
-              arguments:
-                to: ref('stg_mix__area_protegida')
-                field: id_area_protegida
-              config:
-                severity: warn
-      - name: es_lic
-        data_type: boolean
-        tests:
-          - not_null
-      - name: es_zepa
-        data_type: boolean
-        tests:
-          - not_null
-      - name: es_parque_nacional
-        data_type: boolean
-        tests:
-          - not_null
-
+    
   # ==========================================================================
   # HECHOS
   # ==========================================================================

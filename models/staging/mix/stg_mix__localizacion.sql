@@ -1,6 +1,25 @@
 -- ===========================================================================
 -- stg_mix__localizacion.sql
 -- ===========================================================================
+-- CAPA:   Staging Mix (Silver normalizado)
+-- FUENTE: ref('stg_avistamientos__observaciones')
+--         ref('stg_mix__provincia')
+-- SCHEMA: {{ env_var('DBT_ENVIRONMENTS') }}_SILVER_DB.mix
+-- MATERIALIZACIÓN: view
+--
+-- OBJETIVO:
+--   Tabla de localización geográfica de cada avistamiento.
+--   Solo coordenadas y FK a provincia — sin lógica de área protegida.
+--
+-- DECISIÓN DE ARQUITECTURA:
+--   El join espacial con área protegida (bounding box) es lógica de negocio
+--   — determinar si un avistamiento está dentro o fuera de una zona protegida
+--   es una pregunta analítica, no una normalización estructural.
+--   Por tanto ese join vive en Gold (fct_avistamiento), no en Silver.
+--   Silver solo almacena el dato geográfico limpio.
+--
+-- GRANULARIDAD: una fila por avistamiento.
+-- ===========================================================================
 
 with obs as (
 
@@ -15,21 +34,6 @@ with obs as (
 
 ),
 
-areas as (
-
-    select
-          id_area_protegida
-        , es_lic
-        , es_zepa
-        , es_parque_nacional
-        , lat_min
-        , lat_max
-        , lon_min
-        , lon_max
-    from {{ ref('stg_mix__area_protegida') }}
-
-),
-
 provincia as (
 
     select
@@ -37,48 +41,16 @@ provincia as (
         , nombre
     from {{ ref('stg_mix__provincia') }}
 
-),
-
-obs_con_area as (
-
-    select
-          obs.id_avistamiento
-        , obs.latitud
-        , obs.longitud
-        , obs.provincia_raw
-        , areas.id_area_protegida
-        , coalesce(areas.es_lic, false)             as es_lic
-        , coalesce(areas.es_zepa, false)            as es_zepa
-        , coalesce(areas.es_parque_nacional, false) as es_parque_nacional
-
-    from obs
-
-    left join areas
-           on obs.latitud between areas.lat_min and areas.lat_max
-          and obs.longitud between areas.lon_min and areas.lon_max
-
-    qualify row_number() over (
-        partition by obs.id_avistamiento
-        order by
-            areas.es_parque_nacional desc nulls last,
-            areas.es_zepa desc nulls last,
-            areas.es_lic desc nulls last
-    ) = 1
-
 )
 
 select
-      {{ dbt_utils.generate_surrogate_key(['oca.id_avistamiento']) }} as id_localizacion
-    , oca.id_avistamiento
-    , oca.latitud
-    , oca.longitud
+      {{ dbt_utils.generate_surrogate_key(['obs.id_avistamiento']) }}
+                                                          as id_localizacion
+    , obs.id_avistamiento
+    , obs.latitud
+    , obs.longitud
     , prov.id_provincia
-    , oca.id_area_protegida
-    , oca.es_lic
-    , oca.es_zepa
-    , oca.es_parque_nacional
 
-from obs_con_area oca
-
+from obs
 left join provincia prov
-       on trim(lower(oca.provincia_raw)) = trim(lower(prov.nombre))
+       on trim(lower(obs.provincia_raw)) = trim(lower(prov.nombre))
