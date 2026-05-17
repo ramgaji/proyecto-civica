@@ -1,0 +1,191 @@
+version: 2
+
+snapshots:
+
+  # ==========================================================================
+  # especie_snapshot — SCD Tipo 2 sobre el catálogo de especies
+  # ==========================================================================
+  # ESTRATEGIA: check sobre id_estado_iucn, id_estado_espana, endemismo,
+  #             id_cites, id_tipo_migracion.
+  #
+  # COLUMNAS dbt (generadas automáticamente, no van en el SELECT del snapshot):
+  #   dbt_scd_id     → PK de cada versión histórica (surrogate key de fila)
+  #   dbt_valid_from → timestamp de apertura de la versión
+  #   dbt_valid_to   → timestamp de cierre (NULL = versión vigente)
+  #   dbt_updated_at → timestamp de la última ejecución que tocó esta fila
+  #
+  # POR QUÉ ESTOS TESTS Y NO OTROS:
+  #
+  #   dbt_scd_id      → unique + not_null: es la PK real de la tabla. Sin este
+  #                     test un bug en la estrategia check podría generar dos
+  #                     versiones abiertas para la misma especie con el mismo
+  #                     id, rompiendo el filtro dbt_valid_to IS NULL en
+  #                     dim_especie sin ningún error visible.
+  #
+  #   nombre_cientifico → not_null: es el unique_key del snapshot. Si llega
+  #                     null dbt no puede cerrar versiones anteriores y genera
+  #                     duplicados abiertos indefinidamente. No ponemos unique
+  #                     aquí porque POR DISEÑO habrá varias filas con el mismo
+  #                     nombre_cientifico (una por versión histórica).
+  #
+  #   dbt_valid_from  → not_null: si es null significa que dbt no registró
+  #                     cuándo empezó la versión. Eso hace inútil cualquier
+  #                     análisis histórico cruzado con fct_avistamiento por
+  #                     fecha (el caso de uso principal del snapshot).
+  #
+  #   dbt_valid_to    → NO se testea not_null porque NULL es el valor
+  #                     esperado para la versión vigente. Un not_null aquí
+  #                     siempre fallaría en producción.
+  #
+  #   id_especie      → not_null: surrogate key heredado de stg_mix__especie.
+  #                     Si llega null el JOIN desde dim_especie no puede
+  #                     resolver la especie vigente. No ponemos unique porque,
+  #                     igual que nombre_cientifico, habrá un id_especie por
+  #                     cada versión histórica.
+  #
+  #   id_estado_iucn / id_estado_espana → relationships: son las columnas
+  #                     que disparan el SCD-2. Si apuntan a un id_estado que
+  #                     no existe en el catálogo, dim_especie devolverá null
+  #                     en estado_iucn/estado_espana silenciosamente.
+  #                     severity: warn porque en el snapshot viven versiones
+  #                     históricas: un estado que existía en 2018 puede haber
+  #                     sido eliminado del seed hoy.
+  #
+  #   endemismo       → not_null: boolean computado. Si el snapshot guarda un
+  #                     null aquí, dim_especie hereda ese null y rompe el
+  #                     filtro WHERE endemismo = true en los marts.
+  # ==========================================================================
+
+  - name: especie_snapshot
+    description: >
+      Snapshot SCD Tipo 2 del catálogo de especies.
+      Registra el historial de cambios en los atributos de conservación
+      (estado IUCN, estado España, endemismo, CITES, tipo de migración).
+      Cada versión histórica queda cerrada con dbt_valid_to y la vigente
+      tiene dbt_valid_to = NULL.
+      Fuente: stg_mix__especie. Consumido por: dim_especie (Gold).
+
+    columns:
+
+      # ── COLUMNAS GENERADAS POR dbt ────────────────────────────────────────
+
+      - name: dbt_scd_id
+        description: >
+          PK surrogate de cada versión histórica. Generada por dbt como hash
+          de unique_key + dbt_updated_at. Identifica unívocamente una fila
+          concreta del historial, independientemente de cuántas versiones
+          tenga una especie.
+        data_type: varchar
+        tests:
+          - unique
+          - not_null
+
+      - name: dbt_valid_from
+        description: >
+          Timestamp de apertura de esta versión. Momento en que dbt detectó
+          el valor actual de los check_cols por primera vez (o el cambio
+          respecto a la versión anterior).
+        data_type: timestamp_ntz
+        tests:
+          - not_null
+
+      - name: dbt_valid_to
+        description: >
+          Timestamp de cierre de esta versión. NULL si es la versión vigente.
+          No se testea not_null: el NULL es el valor correcto para registros
+          activos y un not_null aquí fallaría siempre en producción.
+        data_type: timestamp_ntz
+
+      - name: dbt_updated_at
+        description: >
+          Timestamp de la última ejecución de dbt snapshot que procesó
+          esta fila. Usado internamente por dbt para la estrategia check.
+        data_type: timestamp_ntz
+        tests:
+          - not_null
+
+      # ── COLUMNAS DE NEGOCIO (heredadas de stg_mix__especie) ──────────────
+
+      - name: id_especie
+        description: >
+          Surrogate key MD5 de la especie, heredado de stg_mix__especie.
+          No es unique en el snapshot: habrá una fila por versión histórica
+          para la misma especie.
+        data_type: varchar
+        tests:
+          - not_null
+
+      - name: nombre_cientifico
+        description: >
+          unique_key del snapshot. No es unique en la tabla completa
+          (hay varias versiones por especie), pero nunca debe ser null
+          porque es la clave que usa dbt para abrir y cerrar versiones.
+        data_type: varchar
+        tests:
+          - not_null
+
+      - name: nombre_comun_es
+        description: Nombre común en español. No forma parte de check_cols.
+        data_type: varchar
+
+      - name: nombre_comun_en
+        description: Nombre común en inglés. No forma parte de check_cols.
+        data_type: varchar
+
+      - name: id_familia
+        description: >
+          FK a stg_mix__taxonomia_familia. No forma parte de check_cols:
+          un cambio de familia no genera nueva versión histórica.
+        data_type: varchar
+
+      - name: id_estado_iucn
+        description: >
+          FK a stg_mix__estado_conservacion. Forma parte de check_cols:
+          cualquier cambio abre una nueva versión histórica.
+        data_type: number
+        tests:
+          - relationships:
+              arguments:
+                to: ref('stg_mix__estado_conservacion')
+                field: id_estado
+              config:
+                severity: warn
+
+      - name: id_estado_espana
+        description: >
+          FK a stg_mix__estado_conservacion (estado LESRPE en España).
+          Forma parte de check_cols.
+        data_type: number
+        tests:
+          - relationships:
+              arguments:
+                to: ref('stg_mix__estado_conservacion')
+                field: id_estado
+              config:
+                severity: warn
+
+      - name: endemismo
+        description: >
+          TRUE si la especie es endémica de España. Forma parte de check_cols.
+          No debe ser null: se usa como filtro directo en consultas de Gold.
+        data_type: boolean
+        tests:
+          - not_null
+
+      - name: id_tipo_migracion
+        description: >
+          FK a stg_mix__tipo_migracion. Forma parte de check_cols.
+          Puede ser null para especies no migratorias: no se testea not_null.
+        data_type: varchar
+
+      - name: id_cites
+        description: >
+          FK a stg_mix__cites_apendice. Forma parte de check_cols.
+        data_type: number
+        tests:
+          - relationships:
+              arguments:
+                to: ref('stg_mix__cites_apendice')
+                field: id_cites
+              config:
+                severity: warn

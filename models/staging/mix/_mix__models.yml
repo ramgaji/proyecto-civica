@@ -1,0 +1,432 @@
+version: 2
+
+models:
+
+  # ==========================================================================
+  # CATÁLOGOS
+  # ==========================================================================
+
+  - name: stg_mix__tipo_migracion
+    description: Catálogo de tipos de migración.
+    columns:
+      - name: id_tipo_migracion
+        data_type: varchar        # surrogate key MD5 — era number (row_number)
+        tests:
+          - unique
+          - not_null
+      - name: nombre
+        data_type: varchar
+        tests:
+          - unique
+          - not_null
+
+  - name: stg_mix__tipo_amenaza
+    description: Catálogo de tipos de amenaza.
+    columns:
+      - name: id_tipo_amenaza
+        data_type: number
+        tests:
+          - unique
+          - not_null
+      - name: nombre
+        data_type: varchar
+        tests:
+          - unique
+          - not_null
+      - name: descripcion
+        data_type: varchar
+        tests:
+          - not_null
+
+  - name: stg_mix__estado_conservacion
+    description: Catálogo de estados de conservación.
+    columns:
+      - name: id_estado
+        data_type: number
+        tests:
+          - unique
+          - not_null
+      - name: codigo
+        data_type: varchar
+        tests:
+          - not_null
+      - name: descripcion
+        data_type: varchar
+        tests:
+          - not_null
+      - name: nivel_riesgo
+        data_type: number
+        tests:
+          - not_null
+
+  - name: stg_mix__cites_apendice
+    description: Catálogo de apéndices CITES.
+    columns:
+      - name: id_cites
+        data_type: number
+        tests:
+          - unique
+          - not_null
+      - name: apendice
+        data_type: varchar
+        tests:
+          - unique
+          - not_null
+      - name: descripcion
+        data_type: varchar
+        tests:
+          - not_null
+
+  - name: stg_mix__entidad_gestora
+    description: Catálogo de entidades gestoras o responsables.
+    columns:
+      - name: id_entidad
+        data_type: varchar        # surrogate key MD5 — era number (row_number)
+        tests:
+          - unique
+          - not_null
+      - name: nombre
+        data_type: varchar
+        tests:
+          - unique
+          - not_null
+
+  # ==========================================================================
+  # TAXONOMÍA
+  # ==========================================================================
+
+  - name: stg_mix__taxonomia_clase
+    description: Catálogo de clases taxonómicas.
+    columns:
+      - name: id_clase
+        data_type: varchar
+        tests:
+          - unique
+          - not_null
+      - name: nombre_clase
+        data_type: varchar
+        tests:
+          - unique
+          - not_null
+
+  - name: stg_mix__taxonomia_familia
+    description: Catálogo de familias taxonómicas con FK a clase.
+    columns:
+      - name: id_familia
+        data_type: varchar
+        tests:
+          - unique
+          - not_null
+      - name: nombre_familia
+        data_type: varchar
+        tests:
+          - not_null
+      - name: id_clase
+        data_type: varchar
+        tests:
+          - relationships:
+              arguments:
+                to: ref('stg_mix__taxonomia_clase')
+                field: id_clase
+
+  # ==========================================================================
+  # ESPECIE Y AMENAZA
+  # ==========================================================================
+
+  - name: stg_mix__especie
+    description: Tabla maestra de especies.
+    columns:
+      - name: id_especie
+        data_type: varchar
+        tests:
+          - unique
+          - not_null
+      - name: nombre_cientifico
+        data_type: varchar
+        tests:
+          - unique
+          - not_null
+      - name: nombre_comun_es
+        data_type: varchar
+      - name: nombre_comun_en
+        data_type: varchar
+      - name: id_familia
+        data_type: varchar
+        tests:
+          - relationships:
+              arguments:
+                to: ref('stg_mix__taxonomia_familia')
+                field: id_familia
+      - name: id_estado_iucn
+        data_type: number
+        tests:
+          - relationships:
+              arguments:
+                to: ref('stg_mix__estado_conservacion')
+                field: id_estado
+      - name: id_estado_espana
+        data_type: number
+        tests:
+          - relationships:
+              arguments:
+                to: ref('stg_mix__estado_conservacion')
+                field: id_estado
+      - name: endemismo
+        data_type: boolean
+        tests:
+          - not_null
+      - name: id_tipo_migracion
+        data_type: varchar        # surrogate key MD5 — era number (row_number)
+        tests:
+          - relationships:
+              arguments:
+                to: ref('stg_mix__tipo_migracion')
+                field: id_tipo_migracion
+              config:
+                severity: warn  # nullable: especies no migratorias tienen NULL
+      - name: id_cites
+        data_type: number
+        tests:
+          - relationships:
+              arguments:
+                to: ref('stg_mix__cites_apendice')
+                field: id_cites
+      - name: amenaza_raw
+        data_type: varchar
+
+  - name: stg_mix__amenaza
+    description: Tabla N:M entre especie y tipo_amenaza.
+    columns:
+      - name: id_especie
+        data_type: varchar
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_mix__especie')
+                field: id_especie
+      - name: id_tipo_amenaza
+        data_type: number
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_mix__tipo_amenaza')
+                field: id_tipo_amenaza
+
+  # ==========================================================================
+  # GEOGRAFÍA
+  # ==========================================================================
+
+  - name: stg_mix__ccaa
+    description: Catálogo de comunidades autónomas.
+    columns:
+      - name: id_ccaa
+        data_type: varchar        # surrogate key MD5 — era number (row_number)
+        tests:
+          - unique
+          - not_null
+      - name: nombre
+        data_type: varchar
+        tests:
+          - unique
+          - not_null
+
+  - name: stg_mix__provincia
+    description: Catálogo de provincias con FK a CCAA.
+    columns:
+      - name: id_provincia
+        data_type: number
+        tests:
+          - unique
+          - not_null
+      - name: nombre
+        data_type: varchar
+        tests:
+          - unique
+          - not_null
+      - name: id_ccaa
+        data_type: varchar        # surrogate key MD5 — era number (row_number)
+        tests:
+          - relationships:
+              arguments:
+                to: ref('stg_mix__ccaa')
+                field: id_ccaa
+
+  - name: stg_mix__area_protegida
+    description: Tabla normalizada de áreas protegidas.
+    columns:
+      - name: id_area_protegida
+        data_type: varchar
+        tests:
+          - unique
+          - not_null
+      - name: nombre
+        data_type: varchar
+        tests:
+          - not_null
+      - name: es_lic
+        data_type: boolean
+        tests:
+          - not_null
+      - name: es_zepa
+        data_type: boolean
+        tests:
+          - not_null
+      - name: es_parque_nacional
+        data_type: boolean
+        tests:
+          - not_null
+      - name: id_provincia
+        data_type: number
+        tests:
+          - relationships:
+              arguments:
+                to: ref('stg_mix__provincia')
+                field: id_provincia
+      - name: id_entidad
+        data_type: varchar        # surrogate key MD5 — era number (row_number)
+        tests:
+          - relationships:
+              arguments:
+                to: ref('stg_mix__entidad_gestora')
+                field: id_entidad
+      - name: lat_min
+        data_type: number
+        tests:
+          - not_null
+      - name: lat_max
+        data_type: number
+        tests:
+          - not_null
+      - name: lon_min
+        data_type: number
+        tests:
+          - not_null
+      - name: lon_max
+        data_type: number
+        tests:
+          - not_null
+      - name: superficie_ha
+        data_type: number
+      - name: anio_declaracion
+        data_type: number
+      - name: codigo_red_natura
+        data_type: varchar
+
+  - name: stg_mix__localizacion
+    description: Localización normalizada de cada avistamiento.
+    columns:
+      - name: id_localizacion
+        data_type: varchar
+        tests:
+          - unique
+          - not_null
+      - name: id_avistamiento
+        data_type: number
+        tests:
+          - unique
+          - not_null
+      - name: latitud
+        data_type: float
+        tests:
+          - not_null
+      - name: longitud
+        data_type: float
+        tests:
+          - not_null
+      - name: id_provincia
+        data_type: number
+        tests:
+          - relationships:
+              arguments:
+                to: ref('stg_mix__provincia')
+                field: id_provincia
+              config:
+                severity: warn  # Gibraltar y zonas fronterizas no matchan
+
+  # ==========================================================================
+  # HECHOS
+  # ==========================================================================
+
+  - name: stg_mix__avistamiento
+    description: Tabla Silver incremental de avistamientos.
+    columns:
+      - name: id_avistamiento
+        data_type: number
+        tests:
+          - unique
+          - not_null
+      - name: fecha
+        data_type: date
+        tests:
+          - not_null
+      - name: hora_utc
+        data_type: time
+      - name: id_especie
+        data_type: varchar
+        tests:
+          - relationships:
+              arguments:
+                to: ref('stg_mix__especie')
+                field: id_especie
+              config:
+                severity: warn  # avistamientos no catalogados tienen NULL
+      - name: id_localizacion
+        # relationships eliminado: tautológico — id_localizacion se deriva
+        # de id_avistamiento con generate_surrogate_key, siempre válido.
+        data_type: varchar
+        tests:
+          - not_null
+      - name: verificado
+        data_type: boolean
+        tests:
+          - not_null
+      - name: precision_gps_m
+        data_type: number
+      - name: es_catalogada
+        data_type: boolean
+        tests:
+          - not_null
+
+  - name: stg_mix__censo_poblacion
+    description: Tabla normalizada de censos de población.
+    columns:
+      - name: id_censo
+        data_type: varchar
+        tests:
+          - unique
+          - not_null
+      - name: id_especie
+        data_type: varchar
+        tests:
+          - relationships:
+              arguments:
+                to: ref('stg_mix__especie')
+                field: id_especie
+              config:
+                severity: warn
+      - name: id_provincia
+        data_type: number
+        tests:
+          - relationships:
+              arguments:
+                to: ref('stg_mix__provincia')
+                field: id_provincia
+              config:
+                severity: warn  # añadido: provincias no mapeadas no deben romper pipeline
+      - name: id_entidad
+        data_type: varchar        # surrogate key MD5 — era number (row_number)
+        tests:
+          - relationships:
+              arguments:
+                to: ref('stg_mix__entidad_gestora')
+                field: id_entidad
+      - name: anio
+        data_type: number
+        tests:
+          - not_null
+      - name: n_individuos_estimados
+        data_type: float
+      - name: n_parejas_reproductoras
+        data_type: float
