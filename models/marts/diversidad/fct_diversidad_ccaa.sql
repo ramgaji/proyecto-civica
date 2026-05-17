@@ -1,0 +1,137 @@
+-- ===========================================================================
+-- fct_diversidad_ccaa.sql
+-- ===========================================================================
+
+with base as (
+
+    select
+          prov.id_ccaa
+        , extract(year from avi.fecha) as anio
+        , avi.id_especie
+        , esp.estado_espana
+
+    from {{ ref('fct_avistamiento') }} avi
+
+    inner join {{ ref('dim_lugar') }} prov
+            on avi.id_provincia = prov.id_provincia
+
+    inner join {{ ref('dim_especie') }} esp
+            on avi.id_especie = esp.id_especie
+
+    where avi.es_catalogada = true
+
+),
+
+conteos as (
+
+    select
+          id_ccaa
+        , anio
+        , id_especie
+        , count(*) as n_avistamientos
+
+    from base
+
+    group by
+          id_ccaa
+        , anio
+        , id_especie
+
+),
+
+totales as (
+
+    select
+          id_ccaa
+        , anio
+        , sum(n_avistamientos) as n_total
+
+    from conteos
+
+    group by
+          id_ccaa
+        , anio
+
+),
+
+proporciones as (
+
+    select
+          c.id_ccaa
+        , c.anio
+        , c.id_especie
+        , c.n_avistamientos
+        , t.n_total
+
+        , c.n_avistamientos / t.n_total::float as p
+
+    from conteos c
+
+    inner join totales t
+            on c.id_ccaa = t.id_ccaa
+           and c.anio    = t.anio
+
+),
+
+indices as (
+
+    select
+          id_ccaa
+        , anio
+
+        -- Shannon
+        , -sum(p * ln(p)) as shannon_h
+
+        -- Simpson
+        , 1 - sum(power(p, 2)) as simpson_d
+
+    from proporciones
+
+    group by
+          id_ccaa
+        , anio
+
+),
+
+resumen as (
+
+    select
+          b.id_ccaa
+        , b.anio
+
+        , count(distinct b.id_especie) as n_especies
+        , count(*) as n_avistamientos_total
+
+        , count(distinct case when b.estado_espana = 'CR' then b.id_especie end)
+            as n_especies_cr
+
+        , count(distinct case when b.estado_espana = 'EN' then b.id_especie end)
+            as n_especies_en
+
+        , count(distinct case when b.estado_espana = 'VU' then b.id_especie end)
+            as n_especies_vu
+
+    from base b
+
+    group by
+          b.id_ccaa
+        , b.anio
+
+)
+
+select
+      r.id_ccaa
+    , r.anio
+    , r.n_especies
+    , r.n_avistamientos_total
+    , i.shannon_h
+    , i.simpson_d
+    , r.n_especies_cr
+    , r.n_especies_en
+    , r.n_especies_vu
+
+from resumen r
+
+left join indices i
+       on r.id_ccaa = i.id_ccaa
+      and r.anio    = i.anio

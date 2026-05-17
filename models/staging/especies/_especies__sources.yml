@@ -1,0 +1,121 @@
+version: 2
+
+sources:
+  - name: especies
+    description: >
+      Datos en bruto del catálogo de especies y censos de población de fauna
+      en España. Cargados desde CSV a Snowflake Bronze.
+    schema: ESPECIES
+    database: "{{ env_var('DBT_ENVIRONMENTS', 'FAIL') }}_BRONZE_DB"
+
+    tables:
+
+      - name: catalogo
+        description: >
+          Catálogo de especies con atributos taxonómicos, conservación,
+          endemismo, CITES, migración y amenazas.
+          Granularidad: una fila por especie.
+        columns:
+          - name: nombre_cientifico
+            description: Nombre científico de la especie.
+            data_type: varchar
+            tests:
+              - unique
+              - not_null
+
+          - name: nombre_comun_es
+            description: Nombre común en español.
+            data_type: varchar
+            tests:
+              - not_null
+
+          - name: nombre_comun_en
+            description: Nombre común en inglés.
+            data_type: varchar
+
+          - name: clase
+            description: Clase taxonómica.
+            data_type: varchar
+            tests:
+              - not_null
+              - accepted_values:
+                  arguments:
+                    values: ['Mammalia', 'Aves']
+
+          - name: familia
+            description: Familia taxonómica.
+            data_type: varchar
+            tests:
+              - not_null
+
+          - name: estado_iucn
+            description: Estado de conservación IUCN.
+            data_type: varchar
+            tests:
+              - not_null
+
+          - name: estado_espana
+            description: Estado de conservación en España.
+            data_type: varchar
+
+          - name: endemismo
+            description: TRUE si la especie es endémica.
+            data_type: varchar
+            tests:
+              - not_null
+
+          - name: cites_apendice
+            description: Apéndice CITES.
+            data_type: varchar
+
+          - name: tipo_migracion
+            description: Tipo de migración de la especie.
+            data_type: varchar
+
+          - name: amenaza
+            description: Amenazas activas separadas por "|".
+            data_type: varchar
+
+      - name: censos
+        description: >
+          Censos oficiales de población estimada.
+          Granularidad: una fila por especie, provincia y año.
+        columns:
+          - name: especie_nombre_cientifico
+            description: Nombre científico de la especie.
+            data_type: varchar
+            tests:
+              - not_null
+
+          - name: anio_censo
+            description: Año del censo.
+            data_type: varchar
+            tests:
+              - not_null
+
+          - name: provincia
+            description: Provincia del censo.
+            data_type: varchar
+            tests:
+              - not_null
+
+          - name: ccaa
+            description: Comunidad autónoma del censo.
+            data_type: varchar
+            tests:
+              - not_null
+
+          - name: n_individuos_estimados
+            description: Individuos estimados.
+            data_type: float
+
+          - name: n_parejas_reproductoras
+            description: Parejas reproductoras.
+            data_type: float
+
+          - name: entidad_responsable
+            description: Entidad responsable del censo.
+            data_type: varchar
+            tests:
+              - not_null
+

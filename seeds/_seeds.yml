@@ -1,0 +1,98 @@
+version: 2
+
+seeds:
+
+  # --------------------------------------------------------------------------
+  # provincia_ccaa — Mapeo de provincias a CCAA
+  # --------------------------------------------------------------------------
+  - name: provincia_ccaa
+    description: >
+      Tabla de referencia de provincias españolas y su comunidad autónoma.
+      Usada para enriquecer localizacion y censo_poblacion con la CCAA.
+    columns:
+      - name: id_provincia
+        description: PK numérica de la provincia.
+        tests:
+          - unique
+          - not_null
+
+      - name: nombre
+        description: Nombre de la provincia.
+        tests:
+          - unique
+          - not_null
+
+      - name: ccaa
+        description: Comunidad autónoma a la que pertenece la provincia.
+        tests:
+          - not_null
+
+  # --------------------------------------------------------------------------
+  # estado_conservacion — Catálogo único de estados de conservación
+  # --------------------------------------------------------------------------
+  - name: estado_conservacion
+    description: >
+      Catálogo de estados de conservación usados en el proyecto.
+      Incluye códigos de riesgo como LC, NT, VU, EN, CR, EX, NE y EEI.
+    columns:
+      - name: id_estado
+        description: PK del estado de conservación.
+        tests:
+          - unique
+          - not_null
+
+      - name: codigo
+        description: Código del estado de conservación.
+        tests:
+          - unique
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['LC', 'NT', 'VU', 'EN', 'CR', 'EX', 'NE', 'EEI']
+
+      - name: descripcion
+        description: Descripción del estado de conservación.
+        tests:
+          - not_null
+
+      - name: nivel_riesgo
+        description: >
+          Nivel de riesgo numérico (0=sin riesgo/no evaluado/exótica,
+          1=menor riesgo, 5=crítico/extremo).
+        tests:
+          - not_null
+
+  # --------------------------------------------------------------------------
+  # tipo_amenaza — Catálogo de 6 tipos de amenaza fijos
+  # --------------------------------------------------------------------------
+  - name: tipo_amenaza
+    description: >
+      Catálogo cerrado de los 6 tipos de amenaza usados en el proyecto.
+      Cada especie puede tener entre 1 y 3 amenazas activas. La tabla
+      amenaza de Silver referencia este catálogo por nombre.
+    columns:
+      - name: id_tipo_amenaza
+        description: PK del tipo de amenaza.
+        tests:
+          - unique
+          - not_null
+
+      - name: nombre
+        description: Nombre corto del tipo de amenaza.
+        tests:
+          - unique
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - 'Pérdida de hábitat'
+                  - 'Caza/Furtivismo'
+                  - 'Atropellos'
+                  - 'Especies invasoras'
+                  - 'Pesticidas/Contaminación'
+                  - 'Cambio climático'
+
+      - name: descripcion
+        description: Descripción extendida del tipo de amenaza.
+        tests:
+          - not_null

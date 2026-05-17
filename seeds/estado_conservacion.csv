@@ -1,0 +1,9 @@
+id_estado,codigo,descripcion,nivel_riesgo
+1,LC,Preocupación menor,1
+2,NT,Casi amenazado,2
+3,VU,Vulnerable,3
+4,EN,En peligro,4
+5,CR,En peligro crítico,5
+6,EX,Extinto,6
+7,NE,No evaluado,0
+8,EEI,Especie Exótica Invasora,0

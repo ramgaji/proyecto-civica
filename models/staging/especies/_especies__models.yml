@@ -1,0 +1,144 @@
+version: 2
+
+models:
+
+  # ==========================================================================
+  # stg_especies__catalogo
+  # ==========================================================================
+
+  - name: stg_especies__catalogo
+    description: >
+      Staging del catálogo de especies. Limpia nombres, estados de conservación,
+      endemismo, CITES, migración y amenazas. Deduplicado por nombre_cientifico.
+
+    columns:
+
+      - name: nombre_cientifico
+        description: Nombre científico de la especie.
+        data_type: varchar
+        tests:
+          - unique
+          - not_null
+
+      - name: nombre_comun_es
+        description: Nombre común en español.
+        data_type: varchar
+        tests:
+          - not_null
+
+      - name: nombre_comun_en
+        description: Nombre común en inglés.
+        data_type: varchar
+
+      - name: nombre_clase
+        description: Clase taxonómica.
+        data_type: varchar
+        tests:
+          - not_null
+
+      - name: nombre_familia
+        description: Familia taxonómica.
+        data_type: varchar
+        tests:
+          - not_null
+
+      - name: estado_iucn
+        description: Estado de conservación IUCN normalizado.
+        data_type: varchar
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['LC', 'NT', 'VU', 'EN', 'CR', 'EX', 'NE', 'EEI']
+
+      - name: estado_espana
+        description: Estado de conservación en España.
+        data_type: varchar
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['LC', 'NT', 'VU', 'EN', 'CR', 'EX', 'NE', 'EEI']
+
+      - name: endemismo
+        description: TRUE si la especie es endémica.
+        data_type: boolean
+        tests:
+          - not_null
+
+      - name: tipo_migracion
+        description: Tipo de migración de la especie.
+        data_type: varchar
+
+      - name: cites_apendice
+        description: Apéndice CITES normalizado.
+        data_type: varchar
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['I', 'II', 'III', '–']
+
+      - name: amenaza_raw
+        description: Amenazas activas separadas por '|'.
+        data_type: varchar
+
+  # ==========================================================================
+  # stg_especies__censos
+  # ==========================================================================
+
+  - name: stg_especies__censos
+    description: >
+      Staging de censos de población. Limpia especie, provincia, entidad,
+      año, métricas de población y fuente documental.
+
+    columns:
+
+      - name: nombre_cientifico
+        description: Nombre científico de la especie.
+        data_type: varchar
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_especies__catalogo')
+                field: nombre_cientifico
+              config:
+                severity: warn
+
+      - name: provincia
+        description: Provincia del censo.
+        data_type: varchar
+        tests:
+          - not_null
+
+      - name: ccaa
+        description: Comunidad autónoma del censo.
+        data_type: varchar
+        tests:
+          - not_null
+
+      - name: entidad_responsable
+        description: Entidad responsable del censo.
+        data_type: varchar
+        tests:
+          - not_null
+
+      - name: anio
+        description: Año del censo.
+        data_type: number
+        tests:
+          - not_null
+
+      - name: n_individuos_estimados
+        description: Individuos estimados.
+        data_type: float
+        tests:
+          - positive_values:
+              config:
+                severity: warn
+
+      - name: n_parejas_reproductoras
+        description: Parejas reproductoras.
+        data_type: float
+

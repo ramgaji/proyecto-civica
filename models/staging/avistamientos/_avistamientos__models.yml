@@ -1,0 +1,173 @@
+version: 2
+
+models:
+
+  # ==========================================================================
+  # stg_avistamientos__observaciones
+  # Limpieza mínima de observaciones iNaturalist
+  # ==========================================================================
+
+  - name: stg_avistamientos__observaciones
+    description: >
+      Staging de avistamientos de fauna de iNaturalist.
+      Solo Mammalia y Aves en España.
+      Fechas normalizadas, coordenadas casteadas y taxonomía simplificada.
+
+    columns:
+
+      - name: id_avistamiento
+        description: ID natural del avistamiento en iNaturalist.
+        data_type: number
+        tests:
+          - unique
+          - not_null
+
+      - name: fecha
+        description: Fecha del avistamiento normalizada a DATE.
+        data_type: date
+        tests:
+          - not_null
+
+      - name: hora_utc
+        description: Hora UTC extraída del timestamp EXIF.
+        data_type: time
+
+      - name: latitud
+        description: Latitud GPS casteada a float.
+        data_type: float
+        tests:
+          - not_null
+          - valid_coordinates:
+              arguments:
+                lat_column: latitud
+                lon_column: longitud
+
+      - name: longitud
+        description: Longitud GPS casteada a float.
+        data_type: float
+        tests:
+          - not_null
+
+      - name: precision_gps_m
+        description: Precisión GPS en metros.
+        data_type: number
+
+      - name: provincia_raw
+        description: Provincia del avistamiento.
+        data_type: varchar
+
+      - name: nombre_cientifico
+        description: Nombre científico de la especie.
+        data_type: varchar
+        tests:
+          - not_null
+
+      - name: nombre_clase
+        description: Clase taxonómica principal (MAMMALIA / AVES).
+        data_type: varchar
+        tests:
+          - not_null
+
+      - name: nombre_familia
+        description: Familia taxonómica.
+        data_type: varchar
+
+      - name: verificado
+        description: TRUE si un experto confirmó la identificación.
+        data_type: boolean
+        tests:
+          - not_null
+
+
+  # ==========================================================================
+  # stg_avistamientos__areas
+  # Limpieza mínima de áreas protegidas
+  # ==========================================================================
+
+  - name: stg_avistamientos__areas
+    description: >
+      Staging de áreas protegidas españolas.
+      Bounding boxes y métricas normalizadas para joins espaciales.
+
+    columns:
+
+      - name: id_area_protegida
+        description: ID natural del área protegida.
+        data_type: number
+        tests:
+          - unique
+          - not_null
+
+      - name: nombre
+        description: Nombre del área protegida.
+        data_type: varchar
+        tests:
+          - not_null
+
+      - name: es_lic
+        description: TRUE si es LIC.
+        data_type: boolean
+        tests:
+          - not_null
+
+      - name: es_zepa
+        description: TRUE si es ZEPA.
+        data_type: boolean
+        tests:
+          - not_null
+
+      - name: es_parque_nacional
+        description: TRUE si es Parque Nacional.
+        data_type: boolean
+        tests:
+          - not_null
+
+      - name: provincia
+        description: Provincia del área protegida.
+        data_type: varchar
+
+      - name: ccaa
+        description: Comunidad autónoma.
+        data_type: varchar
+
+      - name: lat_min
+        description: Latitud mínima del bounding box.
+        data_type: number
+        tests:
+          - not_null
+
+      - name: lat_max
+        description: Latitud máxima del bounding box.
+        data_type: number
+        tests:
+          - not_null
+
+      - name: lon_min
+        description: Longitud mínima del bounding box.
+        data_type: number
+        tests:
+          - not_null
+
+      - name: lon_max
+        description: Longitud máxima del bounding box.
+        data_type: number
+        tests:
+          - not_null
+
+      - name: superficie_ha
+        description: Superficie del área en hectáreas.
+        data_type: number
+        tests:
+          - positive_values
+
+      - name: anio_declaracion
+        description: Año de declaración del área protegida.
+        data_type: number
+
+      - name: entidad_gestora
+        description: Entidad responsable del área protegida.
+        data_type: varchar
+
+      - name: codigo_red_natura
+        description: Código oficial Red Natura 2000.
+        data_type: varchar
