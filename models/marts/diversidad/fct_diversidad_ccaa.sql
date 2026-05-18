@@ -18,8 +18,6 @@ with base as (
     inner join {{ ref('dim_especie') }} esp
             on avi.id_especie = esp.id_especie
 
-    where avi.es_catalogada = true
-
 ),
 
 conteos as (
