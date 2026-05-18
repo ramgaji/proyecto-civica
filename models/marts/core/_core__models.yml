@@ -160,3 +160,15 @@ models:
           # Se mantiene pero debería ser severity: warn si hay provincias
           # de Gibraltar o fronterizas sin CCAA mapeada en el seed.
           # Ajustar a warn si el test falla en tu entorno.
+  
+  - name: dim_ccaa
+    description: Dimensión geográfica de provincias españolas con CCAA desnormalizada.
+    columns:
+      - name: id_ccaa
+        tests:
+          - not_null
+
+      - name: ccaa
+        tests:
+          - not_null
+
