@@ -172,3 +172,39 @@ models:
         tests:
           - not_null
 
+  - name: dim_especie_censo
+    description: >
+      Dimensión de especies restringida a las que tienen al menos un censo.
+      Subconjunto de dim_especie filtrado por INNER JOIN con stg_mix__censo_poblacion.
+      Evita exponer en BI el catálogo completo cuando el contexto es censos.
+    columns:
+
+      - name: id_especie
+        tests:
+          - unique
+          - not_null
+
+      - name: nombre_cientifico
+        tests:
+          - unique
+          - not_null
+
+      - name: nombre_comun_es
+
+      - name: nombre_clase
+
+      - name: nombre_familia
+
+      - name: estado_iucn
+
+      - name: estado_espana
+
+      - name: endemismo
+        tests:
+          - not_null
+
+      - name: es_migratoria
+        tests:
+          - not_null
+
+      - name: cites_apendice
