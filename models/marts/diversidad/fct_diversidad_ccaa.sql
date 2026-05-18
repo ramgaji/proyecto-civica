@@ -8,15 +8,24 @@ with base as (
           prov.id_ccaa
         , extract(year from avi.fecha) as anio
         , avi.id_especie
-        , esp.estado_espana
+        , esp.id_estado_espana
+        , est.codigo                              as estado_espana
 
-    from {{ ref('fct_avistamiento') }} avi
+    from {{ ref('stg_mix__avistamiento') }} avi
 
-    inner join {{ ref('dim_lugar') }} prov
-            on avi.id_provincia = prov.id_provincia
+    inner join {{ ref('stg_mix__localizacion') }} loc
+            on avi.id_avistamiento = loc.id_avistamiento
 
-    inner join {{ ref('dim_especie') }} esp
+    inner join {{ ref('stg_mix__provincia') }} prov
+            on loc.id_provincia = prov.id_provincia
+
+    inner join {{ ref('stg_mix__especie') }} esp
             on avi.id_especie = esp.id_especie
+
+    inner join {{ ref('stg_mix__estado_conservacion') }} est
+            on esp.id_estado_espana = est.id_estado
+
+    where avi.es_catalogada = true
 
 ),
 
@@ -76,11 +85,7 @@ indices as (
     select
           id_ccaa
         , anio
-
-        -- Shannon
-        , -sum(p * ln(p)) as shannon_h
-
-        -- Simpson
+        , -sum(p * ln(p))      as shannon_h
         , 1 - sum(power(p, 2)) as simpson_d
 
     from proporciones
@@ -96,18 +101,11 @@ resumen as (
     select
           b.id_ccaa
         , b.anio
-
-        , count(distinct b.id_especie) as n_especies
-        , count(*) as n_avistamientos_total
-
-        , count(distinct case when b.estado_espana = 'CR' then b.id_especie end)
-            as n_especies_cr
-
-        , count(distinct case when b.estado_espana = 'EN' then b.id_especie end)
-            as n_especies_en
-
-        , count(distinct case when b.estado_espana = 'VU' then b.id_especie end)
-            as n_especies_vu
+        , count(distinct b.id_especie)                                          as n_especies
+        , count(*)                                                              as n_avistamientos_total
+        , count(distinct case when b.estado_espana = 'CR' then b.id_especie end) as n_especies_cr
+        , count(distinct case when b.estado_espana = 'EN' then b.id_especie end) as n_especies_en
+        , count(distinct case when b.estado_espana = 'VU' then b.id_especie end) as n_especies_vu
 
     from base b
 

@@ -11,8 +11,13 @@ with censo as (
 
 provincia as (
 
-    select *
-    from {{ ref('dim_lugar') }}
+    select
+          p.id_provincia
+        , p.id_ccaa
+        , c.nombre as ccaa
+    from {{ ref('stg_mix__provincia') }} p
+    left join {{ ref('stg_mix__ccaa') }} c
+           on p.id_ccaa = c.id_ccaa
 
 ),
 

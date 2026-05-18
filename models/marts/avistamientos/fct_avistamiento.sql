@@ -4,7 +4,7 @@
 -- CAPA:   Gold — tabla de hechos principal
 -- FUENTE: ref('stg_mix__avistamiento')
 --         ref('stg_mix__localizacion')
---         ref('dim_area_protegida')
+--         ref('stg_mix__area_protegida')
 -- MATERIALIZACIÓN: table
 --
 -- GRANULARIDAD: una fila por avistamiento.
@@ -38,7 +38,7 @@ loc as (
 area as (
 
     select *
-    from {{ ref('dim_area_protegida') }}
+    from {{ ref('stg_mix__area_protegida') }}
 
 ),
 
@@ -78,9 +78,6 @@ select
     , avi.fecha
     , avi.hora_utc
 
-    -- Hora local España (CET/CEST) derivada desde hora_utc.
-    -- Offset +2h en horario de verano (abril-octubre), +1h en invierno.
-    -- Se calcula aquí porque dim_fecha tiene granularidad diaria estricta.
     , case
         when extract(month from avi.fecha) between 4 and 10
             then mod(date_part('hour', avi.hora_utc) + 2, 24)
@@ -119,5 +116,5 @@ from avi
 
 left join avistamiento_con_area aca
        on avi.id_avistamiento = aca.id_avistamiento
-       
+
 where avi.es_catalogada = true
