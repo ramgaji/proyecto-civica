@@ -105,7 +105,6 @@ select
     , aca.latitud
     , aca.longitud
     , avi.verificado
-    , avi.es_catalogada
     , avi.precision_gps_m
     , aca.es_lic
     , aca.es_zepa
@@ -120,3 +119,5 @@ from avi
 
 left join avistamiento_con_area aca
        on avi.id_avistamiento = aca.id_avistamiento
+       
+where avi.es_catalogada = true

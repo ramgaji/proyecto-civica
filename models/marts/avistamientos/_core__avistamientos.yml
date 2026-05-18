@@ -65,11 +65,6 @@ models:
           # analíticos. El not_null confirma que el LEFT JOIN con
           # avistamiento_con_area no introdujo NULLs donde no debe haberlos.
 
-      - name: es_catalogada
-        tests:
-          - not_null
-          # Se mantiene: columna computada en stg_mix__avistamiento con CASE.
-
       - name: es_lic
         # not_null eliminado: ya testeado en dim_area_protegida.
         # Aquí viene del COALESCE en avistamiento_con_area — siempre false si NULL.
