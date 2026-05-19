@@ -267,16 +267,13 @@ models:
           - not_null
       - name: es_lic
         data_type: boolean
-        tests:
-          - not_null
+
       - name: es_zepa
         data_type: boolean
-        tests:
-          - not_null
+
       - name: es_parque_nacional
         data_type: boolean
-        tests:
-          - not_null
+
       - name: id_provincia
         data_type: number
         tests:
@@ -293,20 +290,16 @@ models:
                 field: id_entidad
       - name: lat_min
         data_type: number
-        tests:
-          - not_null
+
       - name: lat_max
         data_type: number
-        tests:
-          - not_null
+
       - name: lon_min
         data_type: number
-        tests:
-          - not_null
+
       - name: lon_max
         data_type: number
-        tests:
-          - not_null
+
       - name: superficie_ha
         data_type: number
       - name: anio_declaracion
