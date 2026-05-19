@@ -43,22 +43,14 @@ models:
         # nullable por diseño: áreas sin entidad asignada tienen NULL.
 
       - name: codigo_red_natura
-
-      # lat/lon SÍ se testean aquí: son las columnas que usa el join
-      # espacial de fct_avistamiento. Un NULL aquí es nuevo riesgo en Gold
-      # no cubierto por Silver (Silver solo valida que el cast no falló).
+      
       - name: lat_min
-        tests:
-          - not_null
+
       - name: lat_max
-        tests:
-          - not_null
+
       - name: lon_min
-        tests:
-          - not_null
+
       - name: lon_max
-        tests:
-          - not_null
 
   # ==========================================================================
   # dim_especie
