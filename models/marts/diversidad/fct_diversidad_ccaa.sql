@@ -4,7 +4,6 @@
 
 with especie_estado as (
 
-    -- Catálogo de especies con su estado para resolver códigos
     select
           esp.id_especie
         , est.codigo as estado_espana
@@ -14,13 +13,13 @@ with especie_estado as (
 
 ),
 
--- Avistamientos por CCAA y año
 avistamientos as (
 
     select
           prov.id_ccaa
         , extract(year from avi.fecha) as anio
         , avi.id_especie
+        , 1                            as n_registros
 
     from {{ ref('stg_mix__avistamiento') }} avi
 
@@ -34,13 +33,13 @@ avistamientos as (
 
 ),
 
--- Censos por CCAA y año
 censos as (
 
     select
           prov.id_ccaa
         , cen.anio
         , cen.id_especie
+        , 1                as n_registros
 
     from {{ ref('stg_mix__censo_poblacion') }} cen
 
@@ -51,7 +50,23 @@ censos as (
 
 ),
 
--- Union de ambas fuentes
+-- n_avistamientos_total se calcula ANTES del UNION para no perder duplicados
+conteo_avistamientos as (
+
+    select
+          id_ccaa
+        , anio
+        , count(*) as n_avistamientos_total
+
+    from avistamientos
+
+    group by
+          id_ccaa
+        , anio
+
+),
+
+-- UNION para diversidad: especies únicas por CCAA y año
 base_union as (
 
     select id_ccaa, anio, id_especie from avistamientos
@@ -60,7 +75,6 @@ base_union as (
 
 ),
 
--- Añadir estado de conservación
 base as (
 
     select
@@ -148,7 +162,6 @@ resumen as (
           b.id_ccaa
         , b.anio
         , count(distinct b.id_especie)                                           as n_especies
-        , count(*)                                                               as n_avistamientos_total
         , count(distinct case when b.estado_espana = 'CR' then b.id_especie end) as n_especies_cr
         , count(distinct case when b.estado_espana = 'EN' then b.id_especie end) as n_especies_en
         , count(distinct case when b.estado_espana = 'VU' then b.id_especie end) as n_especies_vu
@@ -165,7 +178,7 @@ select
       r.id_ccaa
     , r.anio
     , r.n_especies
-    , r.n_avistamientos_total
+    , ca.n_avistamientos_total
     , i.shannon_h
     , i.simpson_d
     , r.n_especies_cr
@@ -177,3 +190,7 @@ from resumen r
 left join indices i
        on r.id_ccaa = i.id_ccaa
       and r.anio    = i.anio
+
+left join conteo_avistamientos ca
+       on r.id_ccaa = ca.id_ccaa
+      and r.anio    = ca.anio
