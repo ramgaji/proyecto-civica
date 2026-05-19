@@ -25,8 +25,10 @@ models:
         # relationships eliminado: mismo argumento que id_especie.
 
       - name: id_area_protegida
-        # relationships eliminado: NULL es legítimo (avistamiento fuera de
-        # área protegida). Un relationships con warn en FK nullable es ruido.
+        #   # NULL eliminado: todos los avistamientos tienen id_area_protegida.
+        # Los avistamientos fuera de área protegida reciben 'NO_AREA'
+        # mediante COALESCE en fct_avistamiento.
+
 
       - name: fecha
 

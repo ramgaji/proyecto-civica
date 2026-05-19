@@ -19,6 +19,8 @@
 --   El join loc × area es no-equi (BETWEEN), por lo que Snowflake aplica
 --   nested-loop. QUALIFY resuelve solapamientos de áreas priorizando
 --   la figura de mayor protección: parque > zepa > lic.
+--   La fila ficticia NO_AREA se excluye del join para no añadir
+--   comparaciones innecesarias al nested-loop.
 -- ===========================================================================
 
 with avi as (
@@ -39,6 +41,9 @@ area as (
 
     select *
     from {{ ref('stg_mix__area_protegida') }}
+    -- Excluir fila ficticia del join espacial: lat/lon son NULL
+    -- y añadiría N comparaciones inútiles al nested-loop O(N×M)
+    where id_area_protegida != 'NO_AREA'
 
 ),
 
@@ -74,7 +79,9 @@ select
       avi.id_avistamiento
     , avi.id_especie
     , aca.id_provincia
-    , aca.id_area_protegida
+    -- COALESCE: avistamientos fuera de área protegida reciben NO_AREA
+    -- en lugar de NULL para mantener la relación en Power BI
+    , coalesce(aca.id_area_protegida, 'NO_AREA')  as id_area_protegida
     , avi.fecha
     , avi.hora_utc
 
