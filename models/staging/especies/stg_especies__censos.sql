@@ -1,15 +1,20 @@
 -- ===========================================================================
 -- stg_especies__censos.sql
 -- ===========================================================================
--- CAPA:   Staging (Silver)
--- FUENTE: source('especies', 'censos')
+-- CAPA:        Staging (Silver)
+-- FUENTE:      source('especies', 'censos')
 -- MATERIALIZACIÓN: view
 --
--- OBJETIVO:
---   Limpieza mínima de censos para construir:
---   - censo_poblacion
---   - entidad_gestora
---   - provincia / ccaa
+-- DIAGRAMA:
+--   censos {
+--     nombre_cientifico
+--     provincia
+--     ccaa
+--     entidad_responsable
+--     anio
+--     n_individuos_estimados
+--     n_parejas_reproductoras
+--   }
 -- ===========================================================================
 
 with src as (
@@ -68,9 +73,7 @@ cleaned as (
 
     from src
 
-    -- El límite inferior se controla con la variable min_anio_censo.
-    -- El límite superior usa year(current_date()) para no descartar datos
-    -- silenciosamente cuando el proyecto supere el año hardcodeado anterior.
+
     where anio_censo is not null
       and anio_censo::integer between {{ var('min_anio_censo') }} and year(current_date())
 

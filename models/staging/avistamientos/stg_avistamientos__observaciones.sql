@@ -1,20 +1,24 @@
 -- ===========================================================================
 -- stg_avistamientos__observaciones.sql
 -- ===========================================================================
--- CAPA:   Staging (Silver)
--- FUENTE: source('avistamientos', 'observaciones')
--- OBJETIVO:
---   Limpieza mínima de observaciones iNaturalist para construir:
---   - avistamiento
---   - localizacion
---   - especie
---   - taxonomia_familia
---   - taxonomia_clase
+-- CAPA:        Staging (Silver)
+-- FUENTE:      source('avistamientos', 'observaciones')
+-- MATERIALIZACIÓN: view
 --
--- FILTROS:
---   - Solo Mammalia y Aves
---   - Solo registros con coordenadas GPS
---   - Solo España
+-- DIAGRAMA:
+--   observaciones {
+--     id_avistamiento   PK
+--     fecha
+--     hora_utc
+--     nombre_cientifico
+--     nombre_clase
+--     nombre_familia
+--     latitud
+--     longitud
+--     provincia_raw
+--     verificado
+--     precision_gps_m
+--   }
 -- ===========================================================================
 
 with src as (
@@ -79,10 +83,8 @@ cleaned as (
 
     from src
 
-    -- DEDUP: si iNaturalist entrega el mismo id varias veces nos quedamos
-    -- con el registro más reciente según time_observed_at. Si ese campo
-    -- también es igual (duplicados idénticos), el orden es no determinista
-    -- pero el resultado es equivalente.
+    --  si iNaturalist entrega el mismo id varias veces nos quedamos
+    -- con el registro más reciente según time_observed_at. 
     qualify row_number() over (
         partition by id
         order by time_observed_at desc nulls last

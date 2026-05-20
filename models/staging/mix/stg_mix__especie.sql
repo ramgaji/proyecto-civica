@@ -85,7 +85,6 @@ select
 
     , cit.id_cites
 
-    -- Se mantiene solo para construir stg_mix__amenaza
     , cat.amenaza_raw
 
 from catalogo cat

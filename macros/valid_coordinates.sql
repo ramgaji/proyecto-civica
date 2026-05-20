@@ -1,5 +1,5 @@
 {# ===========================================================================
-test que ve si las coordenadas estan dentro del area de observaciones de las zonas que se han acordado
+test que ve si las coordenadas de sources  tienen un limite correcto para que no se rompan en bi
 =========================================================================== #}
 
 {% test valid_coordinates(model, lat_column, lon_column) %}

@@ -1,26 +1,19 @@
 -- ===========================================================================
 -- dim_fecha.sql
 -- ===========================================================================
--- CAPA:   Gold — dimensión temporal
--- FUENTE: ref('stg_mix__avistamiento')
+-- CAPA:        Gold — dimensión temporal
+-- FUENTE:      ref('stg_mix__avistamiento')
 -- MATERIALIZACIÓN: table
 --
--- GRANULARIDAD: una fila por fecha (DATE).
---
--- DECISIÓN — hora eliminada de la dimensión:
---   La versión anterior incluía hora_utc en el SELECT DISTINCT, lo que
---   hacía que la misma fecha apareciera N veces (una por cada hora distinta
---   en que se registraron avistamientos ese día). Una dimensión de fecha
---   debe tener exactamente una fila por fecha.
---
---   La hora es un atributo del avistamiento, no de la fecha. Ya está
---   disponible en fct_avistamiento como hora_utc. La franja horaria
---   (dia_tarde_noche) se calcula allí si se necesita, o puede exponerse
---   como columna derivada en fct_avistamiento directamente.
---
---   Con este cambio dim_fecha tiene la granularidad correcta para un
---   star schema y el JOIN desde fct_avistamiento por fecha es limpio.
--- ===========================================================================
+-- DIAGRAMA:
+--   dim_fecha {
+--     fecha         PK
+--     anio
+--     mes
+--     estacion
+--     dia_semana
+--     nombre_mes
+--   }
 
 with fechas as (
 
