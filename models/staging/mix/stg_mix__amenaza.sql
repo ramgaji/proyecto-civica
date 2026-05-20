@@ -5,10 +5,7 @@
 -- FUENTE: ref('stg_mix__especie')
 --         ref('stg_mix__tipo_amenaza')
 -- MATERIALIZACIÓN: view
---
--- OBJETIVO:
---   Tabla intermedia N:M entre especie y tipo_amenaza.
---   Granularidad: una fila por (id_especie, id_tipo_amenaza).
+
 --
 -- DIAGRAMA:
 --   amenaza {
