@@ -13,11 +13,13 @@ models:
       - name: id_ccaa
         description: Identificador de la comunidad autónoma.
         tests:
+          - unique
           - not_null
 
       - name: anio
         description: Año del análisis.
         tests:
+          - unique
           - not_null
 
       - name: n_especies

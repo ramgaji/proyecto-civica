@@ -1,6 +1,33 @@
 -- ===========================================================================
 -- fct_diversidad_ccaa.sql
 -- ===========================================================================
+-- CAPA:        Gold — tabla de hechos diversidad
+-- FUENTE:      ref('stg_mix__avistamiento')
+--              ref('stg_mix__localizacion')
+--              ref('stg_mix__censo_poblacion')
+--              ref('stg_mix__provincia')
+--              ref('stg_mix__especie')
+--              ref('stg_mix__estado_conservacion')
+-- MATERIALIZACIÓN: table
+--
+-- DIAGRAMA:
+--   fct_diversidad_ccaa {
+--     id_ccaa                PK + FK
+--     anio                   PK
+--     n_especies
+--     n_avistamientos_total
+--     shannon_h
+--     simpson_d
+--     n_especies_cr
+--     n_especies_en
+--     n_especies_vu
+--   }
+--
+-- DECISIÓN — UNION avistamientos + censos:
+--   La diversidad se calcula sobre especies únicas observadas o
+--   censadas. UNION (no UNION ALL) deduplica la misma especie
+--   presente en ambas fuentes. n_avistamientos_total se calcula
+--   antes del UNION para no perder duplicados de conteo.
 
 with especie_estado as (
 

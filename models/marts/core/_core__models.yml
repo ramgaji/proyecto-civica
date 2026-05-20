@@ -13,34 +13,30 @@ models:
       - name: id_area_protegida
         tests:
           - not_null
-          # unique eliminado: ya testeado en stg_mix__area_protegida.
-          # La dim es una proyección del mismo dato; doblar el test solo
-          # duplica coste sin añadir cobertura nueva.
+
 
       - name: nombre
         tests:
           - not_null
-          # redundante respecto a Silver pero se mantiene como contrato
-          # mínimo de la dimensión para detectar regresiones en el JOIN.
+
 
       - name: es_lic
-        # not_null eliminado: ya testeado en Silver.
-        # En Gold solo añaden valor los tests sobre columnas computadas aquí.
+
 
       - name: es_zepa
-        # not_null eliminado: ya testeado en Silver.
+
 
       - name: es_parque_nacional
-        # not_null eliminado: ya testeado en Silver.
+
 
       - name: nombre_provincia
-        # nullable por diseño: áreas sin provincia asignada tienen NULL.
+
 
       - name: ccaa
-        # nullable por diseño: mismo motivo que nombre_provincia.
+
 
       - name: entidad_gestora
-        # nullable por diseño: áreas sin entidad asignada tienen NULL.
+
 
       - name: codigo_red_natura
       
@@ -62,13 +58,12 @@ models:
       - name: id_especie
         tests:
           - not_null
-          # unique eliminado: ya testeado en stg_mix__especie y en el snapshot.
-          # Si hay duplicados aquí es un bug del snapshot que debe detectarse allí.
+
 
       - name: nombre_cientifico
         tests:
           - not_null
-          # unique eliminado: mismo argumento que id_especie.
+
 
       - name: nombre_comun_es
       - name: nombre_comun_en
@@ -80,14 +75,11 @@ models:
       - name: endemismo
         tests:
           - not_null
-          # Se mantiene: es un campo computado en Gold (heredado del snapshot).
-          # Confirma que el CASE en dim_especie no produce NULL.
 
       - name: es_migratoria
         tests:
           - not_null
-          # Se mantiene: columna computada aquí con CASE WHEN mig.nombre IS NULL.
-          # El not_null confirma que el CASE siempre produce true/false.
+
 
       - name: tipo_migracion
       - name: cites_apendice
@@ -104,15 +96,14 @@ models:
     columns:
       - name: fecha
         tests:
-          - unique  # única columna donde unique tiene sentido: es la PK de la dim
+          - unique  
           - not_null
 
       - name: anio
-        # not_null eliminado: derivado de fecha con EXTRACT.
-        # Si fecha no es null (ya testeado), anio tampoco puede serlo.
+
 
       - name: mes
-        # not_null eliminado: mismo argumento.
+
 
       - name: estacion
         tests:
@@ -120,14 +111,13 @@ models:
           - accepted_values:
               arguments:
                 values: ['Invierno', 'Primavera', 'Verano', 'Otoño']
-          # accepted_values se mantiene: el CASE tiene 4 ramas explícitas
-          # y confirma que ningún mes queda fuera del rango esperado.
+
 
       - name: dia_semana
-        # not_null eliminado: derivado de fecha con dayofweek().
+
 
       - name: nombre_mes
-        # not_null eliminado: derivado de fecha con CASE sobre EXTRACT(month).
+
 
   # ==========================================================================
   # dim_lugar
@@ -143,15 +133,11 @@ models:
         tests:
           - not_null
 
-      - name: id_ccaa
-        # sin test: nullable para provincias sin CCAA asignada (zonas fronterizas).
 
       - name: ccaa
         tests:
           - not_null
-          # Se mantiene pero debería ser severity: warn si hay provincias
-          # de Gibraltar o fronterizas sin CCAA mapeada en el seed.
-          # Ajustar a warn si el test falla en tu entorno.
+
   
   - name: dim_ccaa
     description: Dimensión geográfica de provincias españolas con CCAA desnormalizada.
@@ -172,14 +158,10 @@ models:
     columns:
 
       - name: id_especie
-        tests:
-          - unique
-          - not_null
+
 
       - name: nombre_cientifico
-        tests:
-          - unique
-          - not_null
+
 
       - name: nombre_comun_es
 

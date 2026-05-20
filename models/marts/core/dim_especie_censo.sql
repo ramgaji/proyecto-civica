@@ -1,8 +1,40 @@
+-- ===========================================================================
 -- dim_especie_censo.sql
+-- ===========================================================================
+-- CAPA:        Gold — dimensión especies con censo
+-- FUENTE:      ref('especie_snapshot')
+--              ref('stg_mix__censo_poblacion')
+--              ref('stg_mix__taxonomia_familia')
+--              ref('stg_mix__taxonomia_clase')
+--              ref('stg_mix__estado_conservacion')
+--              ref('stg_mix__cites_apendice')
+--              ref('stg_mix__tipo_migracion')
+-- MATERIALIZACIÓN: table
+--
+-- DIAGRAMA:
+--   dim_especie_censo {
+--     id_especie          PK
+--     nombre_cientifico
+--     nombre_comun_es
+--     nombre_clase
+--     nombre_familia
+--     estado_iucn
+--     estado_espana
+--     endemismo
+--     es_migratoria
+--     cites_apendice
+--   }
+--
+-- DECISIÓN — INNER JOIN censo_poblacion:
+--   Subconjunto de dim_especie restringido a especies con al menos
+--   un censo. Evita exponer el catálogo completo en el contexto
+--   de análisis de poblaciones.
+-- ===========================================================================
 with especie as (
 
     select *
-    from {{ ref('stg_mix__especie') }}
+    from {{ ref('especie_snapshot') }}
+    where dbt_valid_to is null
 
 ),
 

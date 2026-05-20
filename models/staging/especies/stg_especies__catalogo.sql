@@ -1,18 +1,25 @@
 -- ===========================================================================
 -- stg_especies__catalogo.sql
 -- ===========================================================================
--- CAPA:   Staging (Silver)
--- FUENTE: source('especies', 'catalogo')
+-- CAPA:        Staging (Silver)
+-- FUENTE:      source('especies', 'catalogo')
 -- MATERIALIZACIÓN: view
 --
--- OBJETIVO:
---   Limpieza mínima del catálogo de especies para construir:
---   - especie
---   - taxonomia_clase
---   - taxonomia_familia
---   - amenaza
+-- DIAGRAMA:
+--   catalogo {
+--     nombre_cientifico   PK
+--     nombre_comun_es
+--     nombre_comun_en
+--     nombre_clase
+--     nombre_familia
+--     estado_iucn
+--     estado_espana
+--     endemismo
+--     tipo_migracion
+--     cites_apendice
+--     amenaza_raw
+--   }
 -- ===========================================================================
-
 with src as (
 
     select *

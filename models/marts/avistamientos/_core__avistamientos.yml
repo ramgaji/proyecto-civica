@@ -18,16 +18,13 @@ models:
           - not_null
 
       - name: id_especie
-        # relationships eliminado: ya testeado en stg_mix__avistamiento.
-        # En Gold la FK es heredada; doblar el test no añade cobertura nueva.
+
 
       - name: id_provincia
-        # relationships eliminado: mismo argumento que id_especie.
+
 
       - name: id_area_protegida
-        #   # NULL eliminado: todos los avistamientos tienen id_area_protegida.
-        # Los avistamientos fuera de área protegida reciben 'NO_AREA'
-        # mediante COALESCE en fct_avistamiento.
+
 
 
       - name: fecha
@@ -53,14 +50,13 @@ models:
           - not_null
 
       - name: es_lic
-        # not_null eliminado: viene del COALESCE en avistamiento_con_area
-        # sobre stg_mix__area_protegida — siempre false si NULL.
+
 
       - name: es_zepa
-        # not_null eliminado: mismo argumento que es_lic.
+
 
       - name: es_parque_nacional
-        # not_null eliminado: mismo argumento que es_lic.
+
 
       - name: dentro_area_protegida
         tests:

@@ -1,6 +1,29 @@
 -- ===========================================================================
 -- dim_area_protegida.sql
 -- ===========================================================================
+-- CAPA:        Gold — dimensión áreas protegidas
+-- FUENTE:      ref('stg_mix__area_protegida')
+--              ref('stg_mix__provincia')
+--              ref('stg_mix__ccaa')
+--              ref('stg_mix__entidad_gestora')
+-- MATERIALIZACIÓN: table
+--
+-- DIAGRAMA:
+--   dim_area_protegida {
+--     id_area_protegida   PK
+--     nombre
+--     es_lic
+--     es_zepa
+--     es_parque_nacional
+--     nombre_provincia
+--     ccaa
+--     entidad_gestora
+--     lat_min
+--     lat_max
+--     lon_min
+--     lon_max
+--   }
+-- ===========================================================================
 
 with area as (
 
@@ -37,12 +60,12 @@ select
     , area.es_zepa
     , area.es_parque_nacional
 
-    -- Desnormalizado
+
     , prov.nombre as nombre_provincia
     , ccaa.nombre as ccaa
     , ent.nombre  as entidad_gestora
 
-    -- Bounding box para join espacial en fct_avistamiento
+
     , area.lat_min
     , area.lat_max
     , area.lon_min

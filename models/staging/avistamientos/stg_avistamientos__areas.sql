@@ -1,29 +1,28 @@
 -- ===========================================================================
 -- stg_avistamientos__areas.sql
 -- ===========================================================================
--- CAPA:   Staging (Silver)
--- FUENTE: source('avistamientos', 'areas')
+-- CAPA:        Staging (Silver)
+-- FUENTE:      source('avistamientos', 'areas')
 -- MATERIALIZACIÓN: view
 --
--- OBJETIVO:
---   Limpieza mínima de áreas protegidas para construir:
---   - area_protegida
---   - entidad_gestora
---
--- COLUMNAS FINALES:
---   - id_area_natural
---   - nombre
---   - es_lic
---   - es_zepa
---   - es_parque_nacional
---   - provincia
---   - ccaa
---   - lat_min / lat_max
---   - lon_min / lon_max
---   - superficie_ha
---   - anio_declaracion
---   - entidad_gestora
---   - codigo_red_natura
+-- DIAGRAMA:
+--   areas {
+--     id_area_protegida   PK
+--     nombre
+--     es_lic
+--     es_zepa
+--     es_parque_nacional
+--     provincia
+--     ccaa
+--     lat_min
+--     lat_max
+--     lon_min
+--     lon_max
+--     superficie_ha
+--     anio_declaracion
+--     entidad_gestora
+--     codigo_red_natura
+--   }
 -- ===========================================================================
 
 with src as (

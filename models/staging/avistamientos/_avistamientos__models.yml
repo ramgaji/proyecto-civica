@@ -4,7 +4,6 @@ models:
 
   # ==========================================================================
   # stg_avistamientos__observaciones
-  # Limpieza mínima de observaciones iNaturalist
   # ==========================================================================
 
   - name: stg_avistamientos__observaciones
@@ -81,7 +80,6 @@ models:
 
   # ==========================================================================
   # stg_avistamientos__areas
-  # Limpieza mínima de áreas protegidas
   # ==========================================================================
 
   - name: stg_avistamientos__areas
