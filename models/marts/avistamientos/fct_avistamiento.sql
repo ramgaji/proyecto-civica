@@ -1,25 +1,31 @@
 -- ===========================================================================
 -- fct_avistamiento.sql
 -- ===========================================================================
--- CAPA:   Gold — tabla de hechos principal
--- FUENTE: ref('stg_mix__avistamiento')
---         ref('stg_mix__localizacion')
---         ref('dim_area_protegida')
+-- CAPA:        Gold — tabla de hechos principal
+-- FUENTE:      ref('stg_mix__avistamiento')
+--              ref('stg_mix__localizacion')
+--              ref('stg_mix__area_protegida')
 -- MATERIALIZACIÓN: table
 --
--- GRANULARIDAD: una fila por avistamiento.
---
--- NOTA — hora_local y franja horaria:
---   Tras corregir dim_fecha (granularidad estricta por fecha), la hora
---   y la franja dia/tarde/noche se calculan aquí directamente desde
---   hora_utc aplicando el offset horario de España.
---   Esto mantiene el dato disponible para análisis sin romper la dim.
---
--- NOTA — join espacial bounding box:
---   El join loc × area es no-equi (BETWEEN), por lo que Snowflake aplica
---   nested-loop. QUALIFY resuelve solapamientos de áreas priorizando
---   la figura de mayor protección: parque > zepa > lic.
--- ===========================================================================
+-- DIAGRAMA:
+--   fct_avistamiento {
+--     id_avistamiento     PK
+--     id_especie          FK
+--     id_provincia        FK
+--     id_area_protegida   FK  'NO_AREA' si fuera de zona
+--     fecha
+--     hora_utc
+--     hora_local
+--     franja_horaria
+--     latitud
+--     longitud
+--     verificado
+--     precision_gps_m
+--     es_lic
+--     es_zepa
+--     es_parque_nacional
+--     dentro_area_protegida
+--   }
 
 with avi as (
 
@@ -38,7 +44,9 @@ loc as (
 area as (
 
     select *
-    from {{ ref('dim_area_protegida') }}
+    from {{ ref('stg_mix__area_protegida') }}
+
+    where id_area_protegida != 'NO_AREA'
 
 ),
 
@@ -74,13 +82,11 @@ select
       avi.id_avistamiento
     , avi.id_especie
     , aca.id_provincia
-    , aca.id_area_protegida
+
+    , coalesce(aca.id_area_protegida, 'NO_AREA')  as id_area_protegida
     , avi.fecha
     , avi.hora_utc
 
-    -- Hora local España (CET/CEST) derivada desde hora_utc.
-    -- Offset +2h en horario de verano (abril-octubre), +1h en invierno.
-    -- Se calcula aquí porque dim_fecha tiene granularidad diaria estricta.
     , case
         when extract(month from avi.fecha) between 4 and 10
             then mod(date_part('hour', avi.hora_utc) + 2, 24)
@@ -105,7 +111,6 @@ select
     , aca.latitud
     , aca.longitud
     , avi.verificado
-    , avi.es_catalogada
     , avi.precision_gps_m
     , aca.es_lic
     , aca.es_zepa
@@ -120,3 +125,5 @@ from avi
 
 left join avistamiento_con_area aca
        on avi.id_avistamiento = aca.id_avistamiento
+
+where avi.es_catalogada = true

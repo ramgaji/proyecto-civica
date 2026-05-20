@@ -1,7 +1,30 @@
 -- ===========================================================================
 -- dim_especie.sql
 -- ===========================================================================
-
+-- CAPA:        Gold — dimensión especies
+-- FUENTE:      ref('especie_snapshot')
+--              ref('stg_mix__taxonomia_familia')
+--              ref('stg_mix__taxonomia_clase')
+--              ref('stg_mix__estado_conservacion')
+--              ref('stg_mix__tipo_migracion')
+--              ref('stg_mix__cites_apendice')
+-- MATERIALIZACIÓN: table
+--
+-- DIAGRAMA:
+--   dim_especie {
+--     id_especie        PK
+--     nombre_cientifico
+--     nombre_comun_es
+--     nombre_comun_en
+--     nombre_familia
+--     nombre_clase
+--     estado_iucn
+--     estado_espana
+--     endemismo
+--     es_migratoria
+--     tipo_migracion
+--     cites_apendice
+--   }
 with snapshot as (
 
     select *

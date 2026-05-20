@@ -11,21 +11,7 @@
 --     id_entidad
 --     nombre
 --   }
---
--- OBJETIVO:
---   Catálogo único de entidades responsables de:
---   - áreas protegidas
---   - censos poblacionales
---
--- DECISIÓN — surrogate key en lugar de row_number():
---   ROW_NUMBER() ORDER BY nombre genera IDs que cambian cuando se añade
---   una nueva entidad: todas las entidades posteriores alfabéticamente
---   recibirían un id_entidad distinto, rompiendo cualquier FK guardada
---   en tablas incrementales o snapshots.
---   generate_surrogate_key(['nombre']) produce un MD5 estable: el ID de
---   cada entidad es siempre el mismo independientemente de cuántas
---   entidades nuevas aparezcan.
--- ===========================================================================
+
 
 with areas as (
 

@@ -1,6 +1,29 @@
--- ===========================================================================
 -- stg_mix__avistamiento.sql
 -- ===========================================================================
+-- CAPA:        Staging Mix (Silver normalizado)
+-- FUENTE:      ref('stg_avistamientos__observaciones')
+--              ref('stg_mix__especie')
+--              ref('stg_mix__localizacion')
+-- MATERIALIZACIÓN: incremental (merge)
+--
+-- DIAGRAMA:
+--   avistamiento {
+--     id_avistamiento   PK
+--     fecha
+--     hora_utc
+--     id_especie        FK nullable
+--     id_localizacion   FK
+--     verificado
+--     precision_gps_m
+--     es_catalogada
+--   }
+--
+-- DECISIÓN — incremental merge:
+--   unique_key=id_avistamiento porque iNaturalist puede actualizar
+--   observaciones existentes (verificación, corrección de especie).
+--   Watermark sobre fecha con overlap de -1h para cubrir registros
+--   con lag de sincronización. on_schema_change=fail para detectar
+--   cambios de esquema de forma ruidosa, no silenciosa.
 
 {{ config(
     materialized='incremental',

@@ -1,7 +1,25 @@
 -- ===========================================================================
 -- fct_censo_anual.sql
 -- ===========================================================================
-
+-- CAPA:        Gold — tabla de hechos censos
+-- FUENTE:      ref('stg_mix__censo_poblacion')
+--              ref('stg_mix__provincia')
+--              ref('stg_mix__ccaa')
+-- MATERIALIZACIÓN: table
+--
+-- DIAGRAMA:
+--   fct_censo_anual {
+--     id_censo                  PK
+--     id_especie                FK
+--     id_provincia              FK
+--     ccaa
+--     anio
+--     n_individuos_estimados
+--     n_parejas_reproductoras
+--     variacion_vs_anterior
+--     variacion_pct_vs_anterior
+--     tendencia
+--   }
 with censo as (
 
     select *
@@ -11,8 +29,13 @@ with censo as (
 
 provincia as (
 
-    select *
-    from {{ ref('dim_lugar') }}
+    select
+          p.id_provincia
+        , p.id_ccaa
+        , c.nombre as ccaa
+    from {{ ref('stg_mix__provincia') }} p
+    left join {{ ref('stg_mix__ccaa') }} c
+           on p.id_ccaa = c.id_ccaa
 
 ),
 

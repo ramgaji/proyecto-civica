@@ -1,25 +1,20 @@
 -- ===========================================================================
 -- stg_mix__localizacion.sql
 -- ===========================================================================
--- CAPA:   Staging Mix (Silver normalizado)
--- FUENTE: ref('stg_avistamientos__observaciones')
---         ref('stg_mix__provincia')
--- SCHEMA: {{ env_var('DBT_ENVIRONMENTS') }}_SILVER_DB.mix
+-- CAPA:        Staging Mix (Silver normalizado)
+-- FUENTE:      ref('stg_avistamientos__observaciones')
+--              ref('stg_mix__provincia')
+-- SCHEMA:      {{ env_var('DBT_ENVIRONMENTS') }}_SILVER_DB.mix
 -- MATERIALIZACIÓN: view
 --
--- OBJETIVO:
---   Tabla de localización geográfica de cada avistamiento.
---   Solo coordenadas y FK a provincia — sin lógica de área protegida.
---
--- DECISIÓN DE ARQUITECTURA:
---   El join espacial con área protegida (bounding box) es lógica de negocio
---   — determinar si un avistamiento está dentro o fuera de una zona protegida
---   es una pregunta analítica, no una normalización estructural.
---   Por tanto ese join vive en Gold (fct_avistamiento), no en Silver.
---   Silver solo almacena el dato geográfico limpio.
---
--- GRANULARIDAD: una fila por avistamiento.
--- ===========================================================================
+-- DIAGRAMA:
+--   localizacion {
+--     id_localizacion   PK  surrogate MD5(id_avistamiento)
+--     id_avistamiento   FK  1:1 con avistamiento
+--     latitud
+--     longitud
+--     id_provincia      FK  nullable — Gibraltar y frontera no matchan
+--   }
 
 with obs as (
 

@@ -15,6 +15,7 @@ models:
         tests:
           - not_null
 
+
       - name: anio
         description: Año del análisis.
         tests:

@@ -14,34 +14,28 @@ models:
           - not_null
 
       - name: id_especie
-        # relationships eliminado: ya testeado en stg_mix__censo_poblacion.
-        # En Gold la FK es heredada; el test duplicado solo añade coste.
 
       - name: id_provincia
-        # relationships eliminado: mismo argumento que id_especie.
+
 
       - name: ccaa
-        # sin test: nullable — censos de provincias no mapeadas tienen NULL.
+
 
       - name: anio
         tests:
           - not_null
 
       - name: n_individuos_estimados
-        # positive_values eliminado: en Silver ya se convirtieron los valores
-        # <= 0 a NULL con CASE WHEN. En Gold esta columna nunca puede ser 0
-        # ni negativa — el test siempre pasaría y no detecta nada nuevo.
-        # Los NULLs son legítimos (censo sin estimación) y no los evalúa
-        # la macro de todos modos.
+
 
       - name: n_parejas_reproductoras
-        # sin test: nullable por diseño.
+
 
       - name: variacion_vs_anterior
-        # sin test: nullable cuando no hay año anterior (primer censo).
+
 
       - name: variacion_pct_vs_anterior
-        # sin test: nullable cuando no hay año anterior o el anterior era 0.
+
 
       - name: tendencia
         tests:
@@ -52,5 +46,3 @@ models:
                   - 'baja'
                   - 'estable'
                   - 'sin_referencia'
-          # Se mantiene: el CASE tiene 4 ramas explícitas. Confirma que
-          # la lógica no produce ningún valor fuera de los esperados.
