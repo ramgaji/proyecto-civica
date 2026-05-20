@@ -9,7 +9,7 @@ sources:
       freshness:
 
         warn_after:  {count: 24, period: hour}
-        error_after: {count: 70, period: hour}
+        error_after: {count: 50000, period: hour}
 
     tables:
 
