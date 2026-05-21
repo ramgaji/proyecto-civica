@@ -164,6 +164,11 @@ proyecto-civica/
 
 ---
 
+## 📎 Presentación
+
+La presentación técnica del proyecto y casos de uso está disponible en [`docs/civica_presentacion_final.pptx`](docs/civica_presentacion_final.pptx).
+
+
 ## 👤 Autor
 
 Ramón García · [github.com/ramgaji](https://github.com/ramgaji) · [linkedin.com/ramgaji](https://linkedin.com/ramgaji)
