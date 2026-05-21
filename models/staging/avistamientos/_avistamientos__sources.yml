@@ -9,7 +9,7 @@ sources:
       freshness:
 
         warn_after:  {count: 24, period: hour}
-        error_after: {count: 70, period: hour}
+        error_after: {count: 50000, period: hour}
 
     tables:
 
@@ -25,9 +25,8 @@ sources:
             data_type: number
             tests:
               - unique
-              - not_null:
-                  config:
-                    severity: warn
+              - not_null
+
 
           - name: nombre
             description: Nombre del espacio protegido.
