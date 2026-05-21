@@ -6,15 +6,21 @@ Pipeline de datos end-to-end para análisis de biodiversidad en España, constru
 
 ## 📊 Casos de uso
 
+
 ### Alertas y Seguimiento de Campo
-Monitorización en tiempo real de avistamientos de mamíferos y aves en España. Permite filtrar por provincia, especie, área protegida, estado de conservación y verificación del avistamiento. Incluye mapa de distribución con diferenciación dentro/fuera de área protegida, gráfico de avistamientos por franja horaria y tabla de avistamientos a última hora.
+Monitorización en tiempo real de avistamientos de mamíferos y aves en España. Filtros por provincia, especie, área protegida, estado de conservación y verificación. Mapa de distribución dentro/fuera de área protegida, gráfico por franja horaria y tabla de avistamientos a última hora.
+
+![Alertas y Seguimiento de Campo](docs/powerbi%20alertas%20y%20seguimiento%20de%20campo.png)
 
 ### Censos y Predicción de Poblaciones
-Análisis de la evolución poblacional de especies a partir de censos oficiales. Visualiza la tendencia histórica por especie y provincia, variación respecto al año anterior y clasificación alza/baja/estable. Incluye el estado de conservación IUCN vigente obtenido del histórico SCD-2.
+Análisis de evolución poblacional a partir de censos oficiales. Tendencia histórica por especie y provincia, variación respecto al año anterior y clasificación alza/baja/estable. Estado de conservación IUCN vigente obtenido del histórico SCD-2.
+
+![Censos y Predicción de Poblaciones](docs/powerbi%20censos%20y%20predicci%C3%B3n%20de%20poblaciones.png)
 
 ### Diversidad Ecológica por CCAA
-Métricas de biodiversidad matemática por comunidad autónoma y año. Calcula los índices de Shannon y Simpson a partir de la combinación de avistamientos y censos. Incluye distribución de especies amenazadas (CR, EN, VU) y mapa coroplético de España.
+Métricas de biodiversidad matemática por comunidad autónoma y año. Índices de Shannon y Simpson calculados sobre la combinación de avistamientos y censos. Distribución de especies amenazadas (CR, EN, VU) y mapa coroplético de España.
 
+![Diversidad Ecológica por CCAA](docs/powerbi%20diversidad%20ecol%C3%B3gica%20por%20ccaa.png)
 ---
 
 ## 🏗️ Arquitectura
