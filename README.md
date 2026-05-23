@@ -58,25 +58,19 @@ Gold (marts)
 ## ⚙️ Decisiones técnicas principales
 
 **Incremental merge en `stg_mix__avistamiento`**
-iNaturalist puede actualizar observaciones existentes (corrección de especie, verificación). Se usa merge con `unique_key=id_avistamiento` y watermark `fecha > max(fecha) - 1h` para cubrir lag de sincronización. `on_schema_change=fail` para detectar cambios de esquema de forma ruidosa.
+iNaturalist puede actualizar observaciones existentes (corrección de especie, verificación). Se usa merge con `unique_key=id_avistamiento` y watermark `fecha > max(fecha) - 1h` para registros que llegan con retraso desde la API de iNaturalist, `on_schema_change=fail` para detectar cambios de esquema de forma ruidosa.
 
 **Snapshot SCD-2 sobre `stg_mix__especie`**
-El estado de conservación IUCN de una especie cambia a lo largo del tiempo (Lince ibérico: CR→EN→VU). Se usa estrategia `check` porque el catálogo fuente es un CSV sin campo `updated_at`. Se snapshottea sobre Silver normalizado y no sobre Bronze raw para evitar falsos cambios por ruido tipográfico.
+El estado de conservación IUCN de una especie cambia a lo largo del tiempo (Lince ibérico: CR→EN→VU). Se usa estrategia `check` porque el catálogo fuente es un CSV sin campo `updated_at`. Se snapshottea sobre Silver normalizado.
 
 **Surrogate keys MD5**
-Las entidades sin PK natural estable (ccaa, entidad, especie, familia, clase, tipo_migración, área protegida) usan `generate_surrogate_key` de dbt-utils. `row_number()` cambia al añadir filas nuevas y rompe todas las FKs aguas abajo. Las entidades con PK natural estable (id_provincia=código INE, id_avistamiento=id iNaturalist) no usan MD5.
+Las entidades sin PK natural estable (ccaa, entidad, especie, familia, clase, tipo_migración, área protegida) usan `generate_surrogate_key` de dbt-utils. Las entidades con PK natural estable (id_provincia=código INE, id_avistamiento=id iNaturalist) no usan MD5.
 
-**Join espacial non-equi en `fct_avistamiento`**
-Sin geometrías nativas, el cruce con áreas protegidas se hace mediante `BETWEEN lat_min/lat_max AND lon_min/lon_max`. Como una misma zona puede tener varias figuras de protección solapadas (Parque Nacional + ZEPA + LIC), `QUALIFY row_number()` prioriza la figura de mayor protección. Limitación conocida: bbox ≠ geometría real.
-
-**Hora local en `fct_avistamiento`**
-CET/CEST calculado a partir de `hora_utc` — meses 4-10 +2h, resto +1h. Vive en la fact y no en `dim_fecha` porque la dimensión de fecha tiene granularidad estricta de día.
-
-**UNION en `fct_diversidad_ccaa`**
-Los índices de diversidad se calculan sobre la combinación de avistamientos y censos. UNION (no UNION ALL) para evitar contar la misma especie dos veces si aparece en ambas fuentes. El conteo de avistamientos se calcula en CTE separado antes del UNION para no perder registros.
+**Join espacial en `fct_avistamiento`**
+Mediante bounding box, el cruce con áreas protegidas se hace mediante `BETWEEN lat_min/lat_max AND lon_min/lon_max`. Como una misma zona puede tener varias figuras de protección solapadas (Parque Nacional + ZEPA + LIC), `QUALIFY row_number()` prioriza la figura de mayor protección. Limitación conocida: bbox ≠ geometría real.
 
 **Silver limpia, Gold decide**
-Los filtros de negocio (es_catalogada=true, dentro_area_protegida) viven en Gold. Silver conserva todos los datos incluidos los avistamientos no catalogados, para que futuros modelos puedan consumirlos sin tocar la capa de limpieza.
+Los filtros de negocio (es_catalogada=true, dentro_area_protegida) viven en Gold. Silver conserva todos los datos incluidos los avistamientos no catalogados, para que futuros modelos puedan consumirlos sin tocar la capa de limpieza y normalización.
 
 ---
 
